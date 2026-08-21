@@ -1,0 +1,99 @@
+on:
+  workflow_dispatch:
+  push:
+    branches: main
+    paths:
+      - "slides/**/*.qmd"
+      - "slides/_extensions/**"
+      - "slides/images/**"
+      - "slides/static/**"
+
+name: Quarto Publish
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install decktape
+        run: npm install -g decktape@3.15.0
+
+      - name: Render changed slide decks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            mapfile -t slide_sources < <(find slides -maxdepth 1 -name '*.qmd' | sort)
+          else
+            mapfile -t changed_files < <(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- slides)
+            if printf '%s\n' "${changed_files[@]}" | grep -vqE '^slides/.+\.qmd$'; then
+              mapfile -t slide_sources < <(find slides -maxdepth 1 -name '*.qmd' | sort)
+            else
+              mapfile -t slide_sources < <(
+                printf '%s\n' "${changed_files[@]}" | grep -E '^slides/.+\.qmd$' | sort
+              )
+            fi
+          fi
+
+          if [[ ${#slide_sources[@]} -eq 0 ]]; then
+            echo "No slide sources changed; nothing to export."
+            exit 0
+          fi
+
+          repo_root="${GITHUB_WORKSPACE:-$PWD}"
+          docs_dir="$repo_root/slides/docs"
+          tmp_dir="$(mktemp -d)"
+          server_pid=""
+          cleanup() {
+            if [[ -n "$server_pid" ]]; then
+              kill "$server_pid" >/dev/null 2>&1 || true
+            fi
+            rm -rf "$tmp_dir"
+          }
+          trap cleanup EXIT
+
+          python3 -m http.server 8000 --bind 127.0.0.1 --directory "$tmp_dir" >/tmp/csc453-slides-http.log 2>&1 &
+          server_pid=$!
+
+          sleep 2
+
+          for source in "${slide_sources[@]}"; do
+            quarto render "$source" --output-dir "$docs_dir"
+            html_name="$(basename "${source%.qmd}").html"
+            html_path="$docs_dir/$html_name"
+            pdf_path="$docs_dir/$(basename "${source%.qmd}").pdf"
+
+            cp "$html_path" "$tmp_dir/$html_name"
+            python3 -c "from pathlib import Path; import re, sys; p = Path(sys.argv[1]); html = p.read_text(); html = re.sub(r'class=\"([^\"]*)\"', lambda m: 'class=\"' + ' '.join(c for c in m.group(1).split() if c != 'fragment') + '\"', html); html = re.sub(r'\\sdata-fragment-index=\"[^\"]*\"', '', html); html = re.sub(r\"\\sdata-fragment-index='[^']*'\", '', html); p.write_text(html)" "$tmp_dir/$html_name"
+
+            html_url="http://127.0.0.1:8000/$html_name"
+            decktape reveal \
+              --load-pause 1000 \
+              --pause 250 \
+              --chrome-arg=--no-sandbox \
+              --chrome-arg=--disable-setuid-sandbox \
+              "$html_url" \
+              "$pdf_path"
+          done
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: slides/docs
