@@ -91,6 +91,16 @@ jobs:
               "$pdf_path"
           done
 
+      - name: Stage static assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p slides/docs
+          if [[ -d slides/static ]]; then
+            rsync -a --exclude '@eaDir' slides/static/ slides/docs/
+          fi
+          ls -l slides/docs
+
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
