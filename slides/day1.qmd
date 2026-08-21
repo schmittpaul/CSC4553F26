@@ -25,7 +25,7 @@ format:
   - Connectivity / privacy in challenging environments
 :::
 
-## This class
+## This class 
 
 - Too much to cover in one term: survey of important topics
 - Course Canvas: [https://canvas.calpoly.edu/courses/187882](https://canvas.calpoly.edu/courses/187882)
