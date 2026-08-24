@@ -1,17 +1,17 @@
 [
   {
-    "objectID": "day1.html#who-am-i",
-    "href": "day1.html#who-am-i",
-    "title": "CSC 4553",
-    "section": "Who am I?",
-    "text": "Who am I?\n\nhttps://pschmitt.net\nAcademics\n\nPhD at UCSB\nResearcher at UC Berkeley (ICSI)\nPostdoc then research faculty at Princeton\nSome other stops… USC, Stanford, UH\n\nPrivacy startup co-founder & CEO, measurement startup COO\nMain focuses\n\nIntegrating privacy and security into systems that we all use\nML for network management\nConnectivity / privacy in challenging environments"
-  },
-  {
     "objectID": "day1.html#this-class-1",
     "href": "day1.html#this-class-1",
     "title": "CSC 4553",
     "section": "This class",
     "text": "This class\n\nToo much to cover in one term: survey of important topics\nCourse Canvas: https://canvas.calpoly.edu/courses/187882\nSyllabus: https://schmittpaul.github.io/CSC4553F26/syllabus.pdf\n\n\nWaitlists…\nWhat OSes do you all run?"
+  },
+  {
+    "objectID": "day1.html#who-am-i",
+    "href": "day1.html#who-am-i",
+    "title": "CSC 4553",
+    "section": "Who am I?",
+    "text": "Who am I?\n\nhttps://pschmitt.net\nAcademics\n\nPhD at UCSB\nResearcher at UC Berkeley (ICSI)\nPostdoc then research faculty at Princeton\nSome other stops… USC, Stanford, UH\n\nPrivacy startup co-founder & CEO, measurement startup COO\nMain focuses\n\nIntegrating privacy and security into systems that we all use\nML for network management\nConnectivity / privacy in challenging environments"
   },
   {
     "objectID": "day1.html#who-are-you",
@@ -25,7 +25,7 @@
     "href": "day1.html#how-to-succeed-in-this-class",
     "title": "CSC 4553",
     "section": "How to succeed in this class",
-    "text": "How to succeed in this class\n\nTurn things in on time\nAttend class\n\n… on time. Lectures will start at 10 after the hour\n\nAsk questions\n\nI’m very flexible about how much we cover this term\nI would rather teach less and have everyone understand it\nOur back-and-forth during class is the one of the few indicators I have of how much you are absorbing\n\nTalk to me if you are struggling"
+    "text": "How to succeed in this class\n\nTurn things in on time\nAttend class\n\n… on time. Lectures will start on time\n\nAsk questions\n\nI’m very flexible about how much we cover this term\nI would rather teach less and have everyone understand it\nOur back-and-forth during class is the one of the few indicators I have of how much you are absorbing\n\nTalk to me if you are struggling"
   },
   {
     "objectID": "day1.html#what-are-we-doing-here",
@@ -131,5 +131,166 @@
     "title": "CSC 4553",
     "section": "Abstraction pros / cons",
     "text": "Abstraction pros / cons\n\nAdvantages of OS providing abstractions?\n\nAllow applications to reuse common facilities\nMake different devices look the same\nProvide higher-level or more useful functionality\n\nChallenges?\n\nWhat are the correct abstractions?\nHow much should be exposed?"
+  },
+  {
+    "objectID": "day1.html#os-design-requirements---what-do-we-need",
+    "href": "day1.html#os-design-requirements---what-do-we-need",
+    "title": "CSC 4553",
+    "section": "OS design requirements - what do we need?",
+    "text": "OS design requirements - what do we need?\n\nConvenience, abstraction of hardware resources for user programs\nEfficiency of usage of CPU, memory, etc.\nIsolation between multiple processes\nFairness of access to contended resources\nReliability, the OS must not fail\nOther:\n\nSecurity\nMobility\n\n\n\nAnother view of the same list: the OS as a resource manager that shares resources “well.”\n\n\nChallenges? What are the correct mechanisms? What are the correct policies?\n\n\nMechanism vs. policy is the thread for the rest of the quarter - scheduling algorithms, page replacement, disk scheduling. Plant the vocabulary here and call back to it each time."
+  },
+  {
+    "objectID": "day1.html#section-1",
+    "href": "day1.html#section-1",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day1.html#questions-to-consider-2",
+    "href": "day1.html#questions-to-consider-2",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhat is the chain of events that takes place before you are able to run a process?\nWhere do the different parts of the chain reside? How are they called?"
+  },
+  {
+    "objectID": "day1.html#boot-is-like-a-relay-race",
+    "href": "day1.html#boot-is-like-a-relay-race",
+    "title": "CSC 4553",
+    "section": "Boot is like a relay race",
+    "text": "Boot is like a relay race\n\nA sequence of programs\nEach stage:\n\nHas slightly more power\nLoads the next stage\nJumps to it"
+  },
+  {
+    "objectID": "day1.html#power-on",
+    "href": "day1.html#power-on",
+    "title": "CSC 4553",
+    "section": "Power-On",
+    "text": "Power-On\n\nCPU resets\nInstruction pointer set to a fixed address\nExecution begins in firmware (ROM)\nThe CPU does not know what an OS is"
+  },
+  {
+    "objectID": "day1.html#firmware-bios-uefi",
+    "href": "day1.html#firmware-bios-uefi",
+    "title": "CSC 4553",
+    "section": "Firmware (BIOS / UEFI)",
+    "text": "Firmware (BIOS / UEFI)\n\nInitializes RAM\nInitializes minimal hardware\nFinds one program to run (bootloader)\nLoads it into memory\nJumps to it"
+  },
+  {
+    "objectID": "day1.html#bootloaders-job-grub-example",
+    "href": "day1.html#bootloaders-job-grub-example",
+    "title": "CSC 4553",
+    "section": "Bootloader’s job (GRUB Example)",
+    "text": "Bootloader’s job (GRUB Example)\n\nUnderstand filesystems\nLoad the kernel image\nLoad the initramfs\nJump to the kernel entry point\nProvides kernel command line args\nroot=/dev/sda1\ninit=/sbin/init\nconsole=ttyS0"
+  },
+  {
+    "objectID": "day1.html#what-the-bootloader-does-not-do",
+    "href": "day1.html#what-the-bootloader-does-not-do",
+    "title": "CSC 4553",
+    "section": "What the bootloader does not do",
+    "text": "What the bootloader does not do\n\nDoes not schedule processes\nDoes not manage memory long-term\nDoes not run the OS"
+  },
+  {
+    "objectID": "day1.html#kernel",
+    "href": "day1.html#kernel",
+    "title": "CSC 4553",
+    "section": "Kernel",
+    "text": "Kernel\nThink of the kernel in phases\n\nSelf-setup\nHardware abstraction\nUserspace handoff"
+  },
+  {
+    "objectID": "day1.html#kernel-self-setup",
+    "href": "day1.html#kernel-self-setup",
+    "title": "CSC 4553",
+    "section": "Kernel self-setup",
+    "text": "Kernel self-setup\n\nSets up page tables\nEnables virtual memory\nInitializes scheduler\nSets up interrupts\n\n\nThe kernel cannot rely on anything yet: it is building the world."
+  },
+  {
+    "objectID": "day1.html#kernel-hardware-abstractions",
+    "href": "day1.html#kernel-hardware-abstractions",
+    "title": "CSC 4553",
+    "section": "Kernel hardware abstractions",
+    "text": "Kernel hardware abstractions\nThis is where hardware becomes an abstraction.\n\nDetects hardware\nLoads drivers\nTurns devices into files:\n\n/dev/sda\n/dev/tty\n\nCreates kernel threads"
+  },
+  {
+    "objectID": "day1.html#userspace-handoff",
+    "href": "day1.html#userspace-handoff",
+    "title": "CSC 4553",
+    "section": "Userspace handoff",
+    "text": "Userspace handoff\n\nMounts the root filesystem\nChooses one program to run\nExecutes it with execve()\nexecve(\"/sbin/init\", ...);"
+  },
+  {
+    "objectID": "day1.html#init-pid-1",
+    "href": "day1.html#init-pid-1",
+    "title": "CSC 4553",
+    "section": "Init (PID 1)",
+    "text": "Init (PID 1)\n\nFirst userspace process\nAlways PID 1\nParent of all other processes\n\n\nIf PID 1 exits?\n\nThe kernel panics or shuts down"
+  },
+  {
+    "objectID": "day1.html#section-2",
+    "href": "day1.html#section-2",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day1.html#questions-to-consider-3",
+    "href": "day1.html#questions-to-consider-3",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhat are the different kernel paradigms?\nWhy would you choose one over the other?"
+  },
+  {
+    "objectID": "day1.html#paradigms",
+    "href": "day1.html#paradigms",
+    "title": "CSC 4553",
+    "section": "Paradigms",
+    "text": "Paradigms\n\nThe OS offers a number of services. What should go in the kernel?\n\nIPC\nVFS\nFile system\nScheduler\nVirtual Memory\nDevice drivers"
+  },
+  {
+    "objectID": "day1.html#monolithic-kernels",
+    "href": "day1.html#monolithic-kernels",
+    "title": "CSC 4553",
+    "section": "Monolithic kernels",
+    "text": "Monolithic kernels\n\nOldest, very common design (Linux, Windows 9x, BSDs)\nSingle piece of code in memory\nLimited information hiding\n\nOne part of the kernel can directly access data and functions of other parts"
+  },
+  {
+    "objectID": "day1.html#monolithic-kernels-contd",
+    "href": "day1.html#monolithic-kernels-contd",
+    "title": "CSC 4553",
+    "section": "Monolithic kernels (cont’d)",
+    "text": "Monolithic kernels (cont’d)\n\nQ: What happens when you need something new supported (new hardware device, new system call, new filesystem)?\nModules (loadable kernel modules - LKMs) allow for flexibility, customization, support\n\nPros?\n\nMemory savings\nFlexibility\nMinimal downtime\n\nCons?\n\n(minor) fragmentation: the base kernel can be loaded contiguously in memory\nSecurity (https://github.com/m0nad/Diamorphine DO NOT USE THIS, IT’S SIMPLY TO SHOW YOU)"
+  },
+  {
+    "objectID": "day1.html#layered-kernels",
+    "href": "day1.html#layered-kernels",
+    "title": "CSC 4553",
+    "section": "Layered kernels",
+    "text": "Layered kernels\n\nDijkstra created the THE OS in the 60s, introducing the concept Each inner layer is more privileged; required a trap to move down layers\nHardware-enforcement possible\nIntel announced in May 2024 that the new architectures will only have rings 0 and 3"
+  },
+  {
+    "objectID": "day1.html#microkernels",
+    "href": "day1.html#microkernels",
+    "title": "CSC 4553",
+    "section": "Microkernels",
+    "text": "Microkernels\n\n\n\nPopular research area long ago, didn’t win (although people remain interested in the principles)\nAll non-essential components removed from the kernel, for modularization, extensibility, isolation, security, and ease of management\nA collection of OS services running in user space\nDownsides?\n\nHeavy communication costs through message passing (marshaled through the kernel)"
+  },
+  {
+    "objectID": "day1.html#monolithic-vs-microkernel",
+    "href": "day1.html#monolithic-vs-microkernel",
+    "title": "CSC 4553",
+    "section": "Monolithic vs Microkernel",
+    "text": "Monolithic vs Microkernel"
+  },
+  {
+    "objectID": "day1.html#hybrid-kernels",
+    "href": "day1.html#hybrid-kernels",
+    "title": "CSC 4553",
+    "section": "Hybrid kernels",
+    "text": "Hybrid kernels\n\nCombine a monolithic core with microkernel ideas\nSmall kernel handles critical services (scheduling, IPC, low-level memory)\nOther services (file systems, drivers) can run in kernel or user space\nExamples: macOS (XNU), Windows NT\n\nXNU: Mach microkernel + BSD monolithic layer\nWindows NT: microkernel-inspired, but most services run in kernel mode for performance\n\nPragmatic compromise: microkernel isolation where it matters, monolithic speed where it doesn’t"
+  },
+  {
+    "objectID": "day1.html#section-3",
+    "href": "day1.html#section-3",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
   }
 ]
