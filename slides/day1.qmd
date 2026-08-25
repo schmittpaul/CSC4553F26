@@ -39,7 +39,10 @@ format:
 
 ## How to succeed in this class
 :::{.incremental}
-- Turn things in [on time]{.alert}
+- Turn things in
+  - Labs are due on Fridays
+  - Quizzes are due on Mondays
+  - Programming assignments are due on Wednesdays
 - Attend class
   - … on time. Lectures will start on time
 - Ask questions
