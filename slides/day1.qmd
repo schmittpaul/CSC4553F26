@@ -26,13 +26,8 @@ format:
 - Academics
   - PhD at UCSB
   - Researcher at UC Berkeley (ICSI)
-  - Postdoc then research faculty at Princeton
-  - Some other stops… USC, Stanford, UH
+  - Some other stops… Princeton, USC, Stanford, UH
 - Privacy startup co-founder & CEO, measurement startup COO
-- Main focuses
-  - Integrating privacy and security into systems that we all use
-  - ML for network management
-  - Connectivity / privacy in challenging environments
 :::
 
 ## Who are you?
