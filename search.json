@@ -53,7 +53,7 @@
     "href": "day2.html#os-design-requirements---what-do-we-need",
     "title": "CSC 4553",
     "section": "OS design requirements - what do we need?",
-    "text": "OS design requirements - what do we need?\n\nConvenience, abstraction of hardware resources for user programs\nEfficiency of usage of CPU, memory, etc.\nIsolation between multiple processes\nFairness of access to contended resources\nReliability, the OS must not fail\nOther:\n\nSecurity\nMobility\n\n\n\nAnother view of the same list: the OS as a resource manager that shares resources “well.”\n\n\nChallenges? What are the correct mechanisms? What are the correct policies?\n\n\nMechanism vs. policy is the thread for the rest of the quarter - scheduling algorithms, page replacement, disk scheduling. Plant the vocabulary here and call back to it each time."
+    "text": "OS design requirements - what do we need?\n\nConvenience, abstraction of hardware resources for user programs\nEfficiency of usage of CPU, memory, etc.\nIsolation between multiple processes\nFairness of access to contended resources\nReliability, the OS must not fail\nOther:\n\nSecurity\nMobility\n\n\n\nAnother view of the same list: the OS as a resource manager that shares resources “well.”\n\n\nChallenges? What are the correct mechanisms? What are the correct policies?"
   },
   {
     "objectID": "day2.html#section",
