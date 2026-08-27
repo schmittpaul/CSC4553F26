@@ -117,12 +117,6 @@ Another view of the same list: the OS as a [resource manager]{.alert} that share
 [Challenges]{.alert}? What are the correct [mechanisms]{.alert}? What are the correct [policies]{.alert}?
 :::
 
-::: {.notes}
-Mechanism vs. policy is the thread for the rest of the quarter - scheduling
-algorithms, page replacement, disk scheduling. Plant the vocabulary here and
-call back to it each time.
-:::
-
 ## {background-color="#6E404F"}
 
 ::: {.r-fit-text}
