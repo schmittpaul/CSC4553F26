@@ -7,6 +7,8 @@ on:
       - "slides/_extensions/**"
       - "slides/images/**"
       - "slides/static/**"
+      - "slides/tools/**"
+      - ".github/workflows/publish.yml"
 
 name: Quarto Publish
 
@@ -101,9 +103,14 @@ jobs:
           fi
           ls -l slides/docs
 
+      - name: Generate landing page
+        shell: bash
+        run: python3 slides/tools/make_index.py
+
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: slides/docs
+          keep_files: true
