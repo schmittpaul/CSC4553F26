@@ -1163,10 +1163,6 @@ margin-right: 0; }
 <li class="fragment">Both use the same basic mechanism: save state, jump to a kernel handler via an <span class="alert">interrupt vector table</span></li>
 </ul>
 </section>
-<section id="interrupts-and-traps-contd" class="slide level2">
-<h2>Interrupts and traps (cont’d)</h2>
-
-<img role="img" data-src="images/interrupt.png" class="r-stretch"></section>
 <section id="why-this-matters" class="slide level2">
 <h2>Why this matters</h2>
 <ul>
@@ -1207,9 +1203,9 @@ margin-right: 0; }
 <li class="fragment">The hardware has to enforce four things:
 <ol type="1">
 <li class="fragment">A <span class="alert">mode bit</span> that user code cannot set on its own</li>
+<li class="fragment">A <span class="alert">timer</span> so the kernel always gets the CPU back</li>
 <li class="fragment"><span class="alert">Privileged instructions</span> that only work in kernel mode</li>
 <li class="fragment"><span class="alert">Memory protection</span> so a process can’t touch kernel memory</li>
-<li class="fragment">A <span class="alert">timer</span> so the kernel always gets the CPU back</li>
 </ol></li>
 <li class="fragment">Remove any one of them and the protection falls apart</li>
 </ul>
@@ -1233,11 +1229,24 @@ margin-right: 0; }
 </ul></li>
 </ul>
 </section>
+<section id="the-timer" class="slide level2">
+<h2>The timer</h2>
+<ul>
+<li class="fragment">A piece of hardware that fires an interrupt every few milliseconds, no matter what the CPU is doing</li>
+<li class="fragment">That interrupt is a trap, so it puts the kernel back in control</li>
+<li class="fragment">Setting the timer (or turning it off) is privileged — only the kernel can do it</li>
+<li class="fragment">Without it, the kernel only runs when a process <em>chooses</em> to ask for something
+<ul>
+<li class="fragment">Protection that depends on the good behavior of the program you’re protecting against isn’t protection</li>
+</ul></li>
+<li class="fragment">We’ll come back to what the kernel <em>does</em> with that control when we cover scheduling</li>
+</ul>
+</section>
 <section id="privileged-instructions" class="slide level2">
 <h2>Privileged instructions</h2>
 <ul>
 <li class="fragment">Some instructions only work in kernel mode; try them in user mode and you get a trap instead</li>
-<li class="fragment">Roughly, anything that would let you escape the sandbox:
+<li class="fragment">Roughly, anything that would let you escape/alter the sandbox:
 <ul>
 <li class="fragment">Switching back to user mode (returning from a trap)</li>
 <li class="fragment">Changing where the interrupt vector table points</li>
@@ -1277,19 +1286,6 @@ display:block!important;
 </ul></li>
 </ul>
 </section>
-<section id="the-timer" class="slide level2">
-<h2>The timer</h2>
-<ul>
-<li class="fragment">A piece of hardware that fires an interrupt every few milliseconds, no matter what the CPU is doing</li>
-<li class="fragment">That interrupt is a trap, so it puts the kernel back in control</li>
-<li class="fragment">Setting the timer (or turning it off) is privileged — only the kernel can do it</li>
-<li class="fragment">Without it, the kernel only runs when a process <em>chooses</em> to ask for something
-<ul>
-<li class="fragment">Protection that depends on the good behavior of the program you’re protecting against isn’t protection</li>
-</ul></li>
-<li class="fragment">We’ll come back to what the kernel <em>does</em> with that control when we cover scheduling</li>
-</ul>
-</section>
 <section id="system-calls" class="slide level2">
 <h2>System calls</h2>
 <ul>
@@ -1312,7 +1308,6 @@ display:block!important;
 <li class="fragment">We call into the library wrapper (e.g., <code>glibc</code>) which places arguments into registers</li>
 <li class="fragment">Each system call has a special number that identifies it to the kernel</li>
 <li class="fragment">Executes a TRAP instruction (switch to kernel mode)</li>
-<li class="fragment">A logical separation of memory space</li>
 <li class="fragment">Kernel’s system call handler is invoked, once done (but may block) may be returned to the process</li>
 </ul>
 </section>
