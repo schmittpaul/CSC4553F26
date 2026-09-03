@@ -130,8 +130,6 @@ Comments? Thoughts?
 - Both use the same basic mechanism: save state, jump to a kernel handler via an [interrupt vector table]{.alert}
 :::
 
-## Interrupts and traps (cont'd)
-![](images/interrupt.png)
 
 ## Why this matters
 :::{.incremental}
@@ -161,9 +159,9 @@ Comments? Thoughts?
 - The mode bit by itself doesn't protect anything — it's just a flag
 - The hardware has to enforce four things:
   1. A [mode bit]{.alert} that user code cannot set on its own
-  2. [Privileged instructions]{.alert} that only work in kernel mode
-  3. [Memory protection]{.alert} so a process can't touch kernel memory
-  4. A [timer]{.alert} so the kernel always gets the CPU back
+  2. A [timer]{.alert} so the kernel always gets the CPU back
+  3. [Privileged instructions]{.alert} that only work in kernel mode
+  4. [Memory protection]{.alert} so a process can't touch kernel memory 
 - Remove any one of them and the protection falls apart
 :::
 
@@ -179,10 +177,20 @@ Comments? Thoughts?
   - If you could pick the address, you'd get kernel mode *and* run your own code
 :::
 
+## The timer
+:::{.incremental}
+- A piece of hardware that fires an interrupt every few milliseconds, no matter what the CPU is doing
+- That interrupt is a trap, so it puts the kernel back in control
+- Setting the timer (or turning it off) is privileged — only the kernel can do it
+- Without it, the kernel only runs when a process *chooses* to ask for something
+  - Protection that depends on the good behavior of the program you're protecting against isn't protection
+- We'll come back to what the kernel *does* with that control when we cover scheduling
+:::
+
 ## Privileged instructions
 :::{.incremental}
 - Some instructions only work in kernel mode; try them in user mode and you get a trap instead
-- Roughly, anything that would let you escape the sandbox:
+- Roughly, anything that would let you escape/alter the sandbox:
   - Switching back to user mode (returning from a trap)
   - Changing where the interrupt vector table points
   - Changing the memory mapping for a process
@@ -206,15 +214,7 @@ Because turning off interrupts turns off the timer interrupt. A process could th
   - Otherwise you'd just remap the kernel into your own address space
 :::
 
-## The timer
-:::{.incremental}
-- A piece of hardware that fires an interrupt every few milliseconds, no matter what the CPU is doing
-- That interrupt is a trap, so it puts the kernel back in control
-- Setting the timer (or turning it off) is privileged — only the kernel can do it
-- Without it, the kernel only runs when a process *chooses* to ask for something
-  - Protection that depends on the good behavior of the program you're protecting against isn't protection
-- We'll come back to what the kernel *does* with that control when we cover scheduling
-:::
+
 
 ## System calls
 :::{.incremental}
@@ -232,7 +232,6 @@ Because turning off interrupts turns off the timer interrupt. A process could th
 - We call into the library wrapper (e.g., `glibc`) which places arguments into registers
 - Each system call has a special number that identifies it to the kernel
 - Executes a TRAP instruction (switch to kernel mode)
-- A logical separation of memory space
 - Kernel's system call handler is invoked, once done (but may block) may be returned to the process
 :::
 
