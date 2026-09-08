@@ -1,168 +1,140 @@
 [
   {
-    "objectID": "day4.html#admin",
-    "href": "day4.html#admin",
+    "objectID": "day5.html#admin",
+    "href": "day5.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nLab 2 due Friday, 18:00\nQuiz 2 due Monday, 18:00"
+    "text": "Admin\n\nQuiz 2 due today, 18:00"
   },
   {
-    "objectID": "day4.html#questions-to-consider",
-    "href": "day4.html#questions-to-consider",
+    "objectID": "day5.html#questions-to-consider",
+    "href": "day5.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the different kernel paradigms?\nWhy would you choose one over the other?"
+    "text": "Questions to consider\n\nWhat do processes contain?\nHow does the OS run multiple processes at the same time?\nHow are processes laid out in memory?\nHow does the OS store information about each process?"
   },
   {
-    "objectID": "day4.html#paradigms",
-    "href": "day4.html#paradigms",
+    "objectID": "day5.html#processes",
+    "href": "day5.html#processes",
     "title": "CSC 4553",
-    "section": "Paradigms",
-    "text": "Paradigms\n\nThe OS offers a number of services. What should go in the kernel?\n\nIPC\nVFS\nFile system\nScheduler\nVirtual Memory\nDevice drivers"
+    "section": "Processes",
+    "text": "Processes\n\nMost fundamental OS abstraction\n\nProcesses organize information about other abstractions and represent a single thing the computer is “doing”\n\nWhen you run an executable program (passive), the OS creates a process == a running program (active)\nOne program can be multiple processes"
   },
   {
-    "objectID": "day4.html#monolithic-kernels",
-    "href": "day4.html#monolithic-kernels",
+    "objectID": "day5.html#process-organization",
+    "href": "day5.html#process-organization",
     "title": "CSC 4553",
-    "section": "Monolithic kernels",
-    "text": "Monolithic kernels\n\nOldest, very common design (Linux, Windows 9x, BSDs)\nSingle piece of code in memory\nLimited information hiding\n\nOne part of the kernel can directly access data and functions of other parts"
+    "section": "Process organization",
+    "text": "Process organization\n\n\n\nUnlike threads, address spaces and files, processes are not tied to a hardware component. Instead, they contain other abstractions\nProcesses contain:\n\none or more threads,\nan address space, and\nzero or more open file handles representing files"
   },
   {
-    "objectID": "day4.html#monolithic-kernels-contd",
-    "href": "day4.html#monolithic-kernels-contd",
+    "objectID": "day5.html#multiprogramming",
+    "href": "day5.html#multiprogramming",
     "title": "CSC 4553",
-    "section": "Monolithic kernels (cont’d)",
-    "text": "Monolithic kernels (cont’d)\n\nQ: What happens when you need something new supported (new hardware device, new system call, new filesystem)?\nModules (loadable kernel modules - LKMs) allow for flexibility, customization, support\n\nPros?\n\nMemory savings\nFlexibility\nMinimal downtime\n\nCons?\n\n(minor) fragmentation: the base kernel can be loaded contiguously in memory\nSecurity (https://github.com/m0nad/Diamorphine DO NOT USE THIS, IT’S SIMPLY TO SHOW YOU)"
+    "section": "Multiprogramming",
+    "text": "Multiprogramming\n\nProcesses are the core abstraction that allows for multiprogramming: the illusion of concurrency\nOS timeshares CPU across multiple processes: virtualizes CPU\nOS has a CPU scheduler that picks one of the many active processes to execute on a CPU\nPolicy:\n\nwhich process to run\n\nMechanism:\n\nhow to context switch between processes"
   },
   {
-    "objectID": "day4.html#layered-kernels",
-    "href": "day4.html#layered-kernels",
+    "objectID": "day5.html#processs-view-of-the-world",
+    "href": "day5.html#processs-view-of-the-world",
     "title": "CSC 4553",
-    "section": "Layered kernels",
-    "text": "Layered kernels\n\nDijkstra created the THE OS in the 60s, introducing the concept Each inner layer is more privileged; required a trap to move down layers\nHardware-enforcement possible\nIntel announced in May 2024 that the new architectures will only have rings 0 and 3"
+    "section": "Process’s view of the world",
+    "text": "Process’s view of the world\n\nOwn memory with consistent addressing (divorced from physical addressing)\nIt has exclusivity over the CPU: It doesn’t have to worry about scheduling\nConversely, it doesn’t know when it will be scheduled, so real time events require special handling\nHas some identity: pid, gid, uid\nHas a set of services available to it via the OS\n\nData (via file system)\nCommunication (sockets, IPC)\nMore resources (e.g., memory)"
   },
   {
-    "objectID": "day4.html#microkernels",
-    "href": "day4.html#microkernels",
+    "objectID": "day5.html#process-memory-layout",
+    "href": "day5.html#process-memory-layout",
     "title": "CSC 4553",
-    "section": "Microkernels",
-    "text": "Microkernels\n\n\n\nPopular research area long ago, didn’t win (although people remain interested in the principles)\nAll non-essential components removed from the kernel, for modularization, extensibility, isolation, security, and ease of management\nA collection of OS services running in user space\nDownsides?\n\nHeavy communication costs through message passing (marshaled through the kernel)"
+    "section": "Process memory layout",
+    "text": "Process memory layout\n\n\n\nText segment: machine instructions; shareable between identical processes; read-only\nData segment: for initialized data; e.g., int count = 99;\nBSS (block started by symbol) segment: uninitialized data; e.g., int sum[10];\nHeap: dynamic memory allocation\nStack: initial arguments and environment; stack frames"
   },
   {
-    "objectID": "day4.html#monolithic-vs-microkernel",
-    "href": "day4.html#monolithic-vs-microkernel",
+    "objectID": "day5.html#oss-view-of-the-process-world",
+    "href": "day5.html#oss-view-of-the-process-world",
     "title": "CSC 4553",
-    "section": "Monolithic vs Microkernel",
-    "text": "Monolithic vs Microkernel"
+    "section": "OS’s view of the (process) world",
+    "text": "OS’s view of the (process) world\n\n\n\nData for each process is held in a data structure known as a Process Control Block\nPartitioned memory:\n\ndedicated & shared address space\nperhaps non-contiguous\n\nProcess table holds PCBs"
   },
   {
-    "objectID": "day4.html#hybrid-kernels",
-    "href": "day4.html#hybrid-kernels",
+    "objectID": "day5.html#where-does-it-live",
+    "href": "day5.html#where-does-it-live",
     "title": "CSC 4553",
-    "section": "Hybrid kernels",
-    "text": "Hybrid kernels\n\nCombine a monolithic core with microkernel ideas\nSmall kernel handles critical services (scheduling, IPC, low-level memory)\nOther services (file systems, drivers) can run in kernel or user space\nExamples: macOS (XNU), Windows NT\n\nXNU: Mach microkernel + BSD monolithic layer\nWindows NT: microkernel-inspired, but most services run in kernel mode for performance\n\nPragmatic compromise: microkernel isolation where it matters, monolithic speed where it doesn’t"
+    "section": "Where does it live?",
+    "text": "Where does it live?\n\nThink (2 min): which segment holds each labeled item: text, data, BSS, heap, or stack?\nint   count = 99;              // (a) count\nchar  buf[4096];               // (b) buf\nint main(int argc, char **argv) {\n    int i = 0;                 // (c) i\n    char *p = malloc(1024);    // (d) p    (e) what p points to\n    printf(\"%d\\n\", count);     // (f) the literal \"%d\\n\"\n    return 0;                  // (g) the instructions of main() itself\n}\nDiscuss (2 min): compare answers. Which ones did you disagree on?\nQuestion (1 min): you run this same program twice, so there are two processes. Which segments could the OS share between them, and which have to be private?\n\n\nAnswers:\n\n\ncount — data: initialized, global, non-zero.\n\n\nbuf — BSS: global but uninitialized, so the executable only records “4096 zero bytes here” instead of storing 4096 zeros on disk. This is the whole reason BSS exists.\n\n\ni — stack: local to main, lives in main’s stack frame. So do argc and argv.\n\n\np — stack: p is itself a local variable, an 8-byte pointer in the frame.\n\n\nwhat p points to — heap: the 1024 bytes malloc returns. The classic student mistake is collapsing (d) and (e); the pointer and the pointee live in different segments, which is exactly why returning a pointer to a local is a bug but returning a malloc’d pointer is fine.\n\n\n\"%d\\n\" — text (or a read-only data section next to it). String literals are read-only; writing through a char * to one faults.\n\n\nthe code of main() — text.\n\n\nShare-out: text is identical across the two processes and read-only, so the OS maps one physical copy into both address spaces. Everything else has to be private — each process needs its own count, its own stack, its own heap. This is the payoff of the “shareable between identical processes” bullet, and it previews copy-on-write when we get to fork().\nIf a group finishes early: where do argv’s strings live, as opposed to the argv array? (Above the stack, in the region the kernel set up at exec time.)"
   },
   {
-    "objectID": "day4.html#section",
-    "href": "day4.html#section",
+    "objectID": "day5.html#section",
+    "href": "day5.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day4.html#questions-to-consider-1",
-    "href": "day4.html#questions-to-consider-1",
+    "objectID": "day5.html#questions-to-consider-1",
+    "href": "day5.html#questions-to-consider-1",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow do we ensure that a user process doesn’t harm others?\nHow do system calls work? How do they relate to wrapper libraries like glibc?"
+    "text": "Questions to consider\n\nWhat are the different process states and what causes transitions?\nWhat is a context switch?\nWhat are the two general categories of processes and how do they differ?"
   },
   {
-    "objectID": "day4.html#interrupts-and-traps",
-    "href": "day4.html#interrupts-and-traps",
+    "objectID": "day5.html#process-states",
+    "href": "day5.html#process-states",
     "title": "CSC 4553",
-    "section": "Interrupts and traps",
-    "text": "Interrupts and traps\n\nHow does the OS regain control of the CPU when a process is running?\nTwo mechanisms that transfer control to the kernel:\n\nHardware interrupts: asynchronous, generated by devices\n\nTimer, disk I/O completion, keyboard, network\nCPU checks for pending interrupts between instructions\n\nSoftware traps: synchronous, generated by the running program\n\nSystem calls (intentional)\nExceptions: divide-by-zero, page fault, illegal instruction (unintentional)\n\n\nBoth use the same basic mechanism: save state, jump to a kernel handler via an interrupt vector table"
+    "section": "Process states",
+    "text": "Process states\n\nAs a process executes, it changes state\n\nNew: The process is being created\nRunning: Instructions are being executed\nWaiting: The process is waiting for some event (typically I/O or signal handling) to occur\nReady: The process is waiting to be assigned to a processor\nTerminated: The process has finished execution"
   },
   {
-    "objectID": "day4.html#why-this-matters",
-    "href": "day4.html#why-this-matters",
+    "objectID": "day5.html#process-state-transitions",
+    "href": "day5.html#process-state-transitions",
     "title": "CSC 4553",
-    "section": "Why this matters",
-    "text": "Why this matters\n\nWithout hardware interrupts, a misbehaving process could monopolize the CPU forever\nThe timer interrupt is the foundation of preemptive scheduling (we’ll talk about scheduling later)\n\nHardware timer fires periodically (e.g., every 1-10 ms)\nForces a trap into kernel mode regardless of what the process is doing\nKernel’s scheduler decides: resume this process or switch to another?\n\nThis is the answer to: “if the process has the CPU, who stops it?”\n\nThe hardware stops it"
+    "section": "Process state transitions",
+    "text": "Process state transitions"
   },
   {
-    "objectID": "day4.html#dual-mode-operation",
-    "href": "day4.html#dual-mode-operation",
+    "objectID": "day5.html#process-state-transitions-contd",
+    "href": "day5.html#process-state-transitions-contd",
     "title": "CSC 4553",
-    "section": "Dual-mode operation",
-    "text": "Dual-mode operation\n\nDual-mode operation allows OS to protect itself and components\n\nUser mode and kernel mode\n\nMode bit provided/enforced by hardware\n\nProvides ability to distinguish when system is running user code or kernel code.\nWhen a user is running → mode bit is “user”\nWhen kernel code is executing → mode bit is “kernel”\n\nSystem call changes mode to kernel, return from call resets it to user\nSome instructions are only executable in kernel mode"
+    "section": "Process state transitions (cont’d)",
+    "text": "Process state transitions (cont’d)\n\n\n\nRunning process can move from running to terminated (exit or killed), moved to ready (time slice up), or blocked (signaled to wait, I/O)\nWhich state transitions could happen with these expensive actions?\n\nCompute a new RSA key?\nFind the largest value in a 1TB of data?\n\n\n\n\n\n\n\n\n\nRunning to Waiting: This transition occurs when a process cannot continue executing until a specific event occurs. Here are some examples:\n\nI/O Operations:\n\nExample: A process needs to read data from a disk. It issues an I/O request and then moves to the Waiting state until the data is read and available.\nReal-World Scenario: A web server process waiting for data to be read from a database.\n\nResource Availability:\n\nExample: A process requires a resource (like a printer) that is currently in use by another process. It moves to the Waiting state until the resource becomes available.\nReal-World Scenario: A document editing application waiting for access to a shared printer.\n\nInter-Process Communication (IPC):\n\nExample: A process is waiting for a message from another process. It moves to the Waiting state until the message is received.\nReal-World Scenario: A chat application waiting for a message from a server.\n\nSynchronization Primitives:\n\nExample: A process is waiting for a lock or semaphore to be released by another process. It moves to the Waiting state until the lock is available.\nReal-World Scenario: A banking application waiting for a transaction lock to be released.\n\n\nRunning to Ready: This transition occurs when a process is preempted by the scheduler, but it is still ready to run as soon as it gets CPU time again. Here are some examples:\n\nTime Slice Expiration:\n\nExample: A process has used up its allocated time slice. The scheduler preempts it and moves it to the Ready state, allowing another process to run.\nReal-World Scenario: A video streaming application being preempted to allow a background update process to run.\n\nHigher Priority Process:\n\nExample: A higher priority process becomes ready to run. The scheduler preempts the current process and moves it to the Ready state.\nReal-World Scenario: An emergency alert system preempting a running media player application.\n\nVoluntary Yield:\n\nExample: A process voluntarily yields the CPU, indicating it can be preempted. The scheduler moves it to the Ready state.\nReal-World Scenario: A background data synchronization process yielding the CPU to allow a user-initiated task to run."
   },
   {
-    "objectID": "day4.html#hardware-support-for-dual-mode",
-    "href": "day4.html#hardware-support-for-dual-mode",
+    "objectID": "day5.html#state-transition-example",
+    "href": "day5.html#state-transition-example",
     "title": "CSC 4553",
-    "section": "Hardware support for dual-mode",
-    "text": "Hardware support for dual-mode\n\nThe mode bit by itself doesn’t protect anything — it’s just a flag\nThe hardware has to enforce four things:\n\nA mode bit that user code cannot set on its own\nA timer so the kernel always gets the CPU back\nPrivileged instructions that only work in kernel mode\nMemory protection so a process can’t touch kernel memory\n\nRemove any one of them and the protection falls apart"
+    "section": "State transition example",
+    "text": "State transition example\n\n\n\nThink (2 min): a running process calls read() on a file. Trace its state transitions from that moment until it gets its data back. Name what causes each transition\nDiscuss (2 min): compare traces. Did you agree on how many transitions there are, and on what triggers each one?\nShare (1 min): now the data is already in memory (the kernel cached it earlier), so no disk access is needed. Does your trace change?\n\n\n\n\n\n\n\n\nRunning → Waiting: the process calls read(), which traps into the kernel via a system call. The kernel issues the I/O request to the disk and moves the process to the Waiting state — there’s no point giving it the CPU since it literally cannot make progress until the data arrives. The process is now blocked.\nWaiting → Ready: the disk finishes reading and fires a hardware interrupt. The kernel’s interrupt handler runs, sees that this I/O completion is what the blocked process was waiting for, and moves it to the Ready state. Note: it does not go directly to Running — the scheduler still has to pick it.\nReady → Running: the scheduler eventually selects this process (maybe immediately, maybe after other processes run), performs a context switch, and restores its CPU state. Execution resumes on the instruction right after the read() system call — from the process’s perspective, read() just returned.\n\nCommon student mistakes to address: - Confusing Waiting and Ready: Waiting means blocked on an external event; Ready means runnable but waiting for CPU time. - Thinking the process goes directly from Waiting → Running: the scheduler always mediates. - Not recognizing the hardware interrupt as the trigger for step 2 — students often say “when the disk is done” without connecting it to the interrupt mechanism.\nShare-out (cached data): there are no transitions on this diagram at all. The kernel copies the bytes out of its cache and returns — the process stays Running the entire time, and there was never a reason to block it.\nBe careful here, because “nothing happens” is the wrong takeaway. The read() still traps into the kernel: it is a system call, and the page cache is kernel state, so there is no way to check “is it cached?” from user space. What happened is a mode switch (user → kernel → user), not a context switch. The process is still the running process; it’s just executing kernel code on its own behalf, which is why it never leaves the Running state. Worth putting both terms on the board side by side if this comes up — students routinely use them interchangeably, and the cached read() is the cleanest example of one happening without the other.\nTwo more points worth making: (1) blocking isn’t a property of read(), it’s a property of whether the data is available, so the same line of C can be a 100ns call or a 10ms block; (2) it could still lose the CPU here if its time slice expires (Running → Ready), but that’s the scheduler preempting it, not the I/O.\nIf someone asks whether the trap can be avoided: sometimes, but not for read(). The vDSO lets a few calls like gettimeofday() run entirely in user space, and io_uring amortizes the trap away by sharing submission/completion ring buffers with the kernel — both motivated by exactly this observation, that the mode switch is pure overhead when the data was there all along."
   },
   {
-    "objectID": "day4.html#the-mode-bit-and-traps",
-    "href": "day4.html#the-mode-bit-and-traps",
+    "objectID": "day5.html#process-scheduling",
+    "href": "day5.html#process-scheduling",
     "title": "CSC 4553",
-    "section": "The mode bit and traps",
-    "text": "The mode bit and traps\n\nThe mode bit lives inside the CPU, not in memory the process can write to\n\nSo a process can’t just flip it to “kernel”\n\nThe only way into kernel mode is a trap\nA trap does two things at the same time:\n\nSwitches the mode bit to kernel\nJumps to an address the kernel picked in advance (the interrupt vector table)\n\nThat second part is the whole trick\n\nIf you could pick the address, you’d get kernel mode and run your own code"
+    "section": "Process scheduling",
+    "text": "Process scheduling\n\nOS process scheduler selects among available processes for next execution on CPU core\nGoal?\n\nMaximize CPU use, quickly switch processes onto CPU core\n\nMaintains scheduling queues of processes\n\nReady queue: set of all processes residing in main memory, ready and waiting to execute\nWait queues: set of processes waiting for an event (i.e., I/O)\n\nProcesses migrate among the various queues over their lifetime"
   },
   {
-    "objectID": "day4.html#the-timer",
-    "href": "day4.html#the-timer",
+    "objectID": "day5.html#context-switching",
+    "href": "day5.html#context-switching",
     "title": "CSC 4553",
-    "section": "The timer",
-    "text": "The timer\n\nA piece of hardware that fires an interrupt every few milliseconds, no matter what the CPU is doing\nThat interrupt is a trap, so it puts the kernel back in control\nSetting the timer (or turning it off) is privileged — only the kernel can do it\nWithout it, the kernel only runs when a process chooses to ask for something\n\nProtection that depends on the good behavior of the program you’re protecting against isn’t protection\n\nWe’ll come back to what the kernel does with that control when we cover scheduling"
+    "section": "Context switching",
+    "text": "Context switching\n\nWhen CPU switches to another process, the system must save the state of the old process and load the saved state for the new process via a context switch\nContext of a process represented in the PCB\nContext-switch time is pure overhead; the system does no useful work while switching\n\nThe more complex the OS and the PCB → the longer the context switch\n\nTime dependent on hardware support\n\nSome hardware provides multiple sets of registers per CPU → multiple contexts loaded at once"
   },
   {
-    "objectID": "day4.html#privileged-instructions",
-    "href": "day4.html#privileged-instructions",
+    "objectID": "day5.html#context-switching-overhead",
+    "href": "day5.html#context-switching-overhead",
     "title": "CSC 4553",
-    "section": "Privileged instructions",
-    "text": "Privileged instructions\n\nSome instructions only work in kernel mode; try them in user mode and you get a trap instead\nRoughly, anything that would let you escape/alter the sandbox:\n\nSwitching back to user mode (returning from a trap)\nChanging where the interrupt vector table points\nChanging the memory mapping for a process\nTalking to devices directly\nTurning off interrupts\n\nQ: why does “turn off interrupts” have to be privileged?\n\n\nBecause turning off interrupts turns off the timer interrupt. A process could then loop forever and never be preempted — it owns the machine. Same idea for changing the vector table: point it at your own code, trigger a trap, and now your code is running in kernel mode."
+    "section": "Context switching overhead",
+    "text": "Context switching overhead\n\nOn the order of microseconds on modern hardware, used to be milliseconds\nIf not done intelligently, you can spend more time context-switching than actual processing\nQuestion: Why shouldn’t processes control context switching?\n\n\n\nThey could refuse to give up CPU (processes are greedy)\nThey’re intentionally isolated, and don’t have enough information about other processes\nIt would cause too much complication (every process would have to implement its own context switch code)"
   },
   {
-    "objectID": "day4.html#memory-protection",
-    "href": "day4.html#memory-protection",
+    "objectID": "day5.html#scheduling-basics",
+    "href": "day5.html#scheduling-basics",
     "title": "CSC 4553",
-    "section": "Memory protection",
-    "text": "Memory protection\n\nThe mode bit controls which instructions you can run\nIt says nothing about which memory you can touch — that’s a separate mechanism\nEvery memory access goes through hardware that checks the page table\n\nPages are marked “kernel only” or “user OK”\nTouching a kernel page from user mode is a trap (this is a segfault)\n\nAnd changing that mapping is itself a privileged instruction\n\nOtherwise you’d just remap the kernel into your own address space"
+    "section": "Scheduling basics",
+    "text": "Scheduling basics\n\nScheduler usually makes the transition decisions; hides the details from the process/user\nProcesses often characterized as one of two types by what state they spend most of their time in\n\nI/O bound: work is dependent on I/O; e.g., browser, db, media streaming\nCPU bound: work is dependent on CPU; e.g., scientific apps, cryptography\nWhy does this matter?\n\nUnderstanding which your process is allows for optimization\n\nCPU-bound? Faster CPU, parallelize.\nI/O? Faster I/O devices, use async\n\n\n\nScheduler must balance CPU- & I/O-bound processes"
   },
   {
-    "objectID": "day4.html#system-calls",
-    "href": "day4.html#system-calls",
-    "title": "CSC 4553",
-    "section": "System calls",
-    "text": "System calls\n\nThe OS offers a number of services. How do we (applications) interface with them?\n\nWe don’t want to deal with the details, just the abstraction\nThe OS has ultimate control over these operations\n\nSystem calls are the “language” of communication with the OS\nStandards\n\nWin32 (MS)\nPOSIX (nearly all Unix-based systems)"
-  },
-  {
-    "objectID": "day4.html#system-calls-contd",
-    "href": "day4.html#system-calls-contd",
-    "title": "CSC 4553",
-    "section": "System calls (cont’d)",
-    "text": "System calls (cont’d)\n\nWe call into the library wrapper (e.g., glibc) which places arguments into registers\nEach system call has a special number that identifies it to the kernel\nExecutes a TRAP instruction (switch to kernel mode)\nKernel’s system call handler is invoked, once done (but may block) may be returned to the process"
-  },
-  {
-    "objectID": "day4.html#system-calls-contd-1",
-    "href": "day4.html#system-calls-contd-1",
-    "title": "CSC 4553",
-    "section": "System calls (cont’d)",
-    "text": "System calls (cont’d)\n\nTable defined in the kernel: https://github.com/torvalds/linux/blob/master/arch/x86/entry/ syscalls/syscall_32.tbl\n\nNote that system call tables can differ between architectures\n\nYou can run using the table values themselves using the syscall() wrapper\n\nQ: why does syscall() exist?\nIf you’re interested… There are debates https://lwn.net/Articles/771441/"
-  },
-  {
-    "objectID": "day4.html#a-driver-crashes-5-min",
-    "href": "day4.html#a-driver-crashes-5-min",
-    "title": "CSC 4553",
-    "section": "A driver crashes (5 min)",
-    "text": "A driver crashes (5 min)\n\nA USB driver has a bug: it dereferences a null pointer.\nWork through what happens under each of the three designs:\n\nMonolithic\nMicrokernel\n\nFor each one:\n\nWhat happens to the rest of the system?\nWhat does the user see, and what do they have to do about it?\nWho has to be trusted for this to go well?\n\nFollow-up: does it change anything if the monolithic kernel loaded the driver as a module instead of compiling it in?\n\n\nAnswer sketches:\nMonolithic: the driver runs in kernel mode, so the null dereference is a fault the kernel takes on itself — kernel panic / BSOD. Everything dies, user reboots. There’s no protection boundary between the driver and the rest of the kernel: dual-mode protects the kernel from user processes, and this code is not a user process. Trusted: every line of code in the kernel, including a device driver that may have been written by the hardware vendor.\nMicrokernel: the driver is just a process. It dereferences null, the MMU traps it, the driver process dies. The kernel notices its service died and can restart it. The USB stick stops working for a moment; the machine stays up. This is the isolation argument for microkernels, and the reason the idea is still around even though microkernels “lost.” Trusted: only the small kernel. The cost is the message-passing overhead from the earlier slide — every USB read is IPC instead of a function call.\nFollow-up (modules): no, it doesn’t change anything at runtime. Loading as a module changes when the code enters the kernel, not where it runs — once loaded it’s kernel-mode code with full access. Still a panic. This is the security bullet from the modules slide (and the Diamorphine link): a module is arbitrary kernel-mode code. Students often assume modules are sandboxed because they’re loadable; they aren’t.\nShare-out: the point is that “in the kernel” vs “in user space” is the same boundary we spent the second half of class on.\nIf there’s time / a strong group: Linux drivers in Rust and eBPF’s in-kernel verifier are both attempts to get microkernel-style safety at monolithic speed by checking the code instead of hardware-isolating it."
-  },
-  {
-    "objectID": "day4.html#section-1",
-    "href": "day4.html#section-1",
+    "objectID": "day5.html#section-1",
+    "href": "day5.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
