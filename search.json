@@ -1,140 +1,140 @@
 [
   {
-    "objectID": "day5.html#admin",
-    "href": "day5.html#admin",
+    "objectID": "day6.html#admin",
+    "href": "day6.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nQuiz 2 due today, 18:00"
+    "text": "Admin\n\nLab 3 due Friday, 18:00\nQuiz 3 due Monday, 18:00\nProgramming assignment 1 due Wednesday, 18:00"
   },
   {
-    "objectID": "day5.html#questions-to-consider",
-    "href": "day5.html#questions-to-consider",
+    "objectID": "day6.html#questions-to-consider",
+    "href": "day6.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat do processes contain?\nHow does the OS run multiple processes at the same time?\nHow are processes laid out in memory?\nHow does the OS store information about each process?"
+    "text": "Questions to consider\n\nWhich system calls are related to process management and lifecycles?\nHow does the process hierarchy work?\nWhat are zombies and orphans? Why do zombies exist?"
   },
   {
-    "objectID": "day5.html#processes",
-    "href": "day5.html#processes",
+    "objectID": "day6.html#unix-process-apis",
+    "href": "day6.html#unix-process-apis",
     "title": "CSC 4553",
-    "section": "Processes",
-    "text": "Processes\n\nMost fundamental OS abstraction\n\nProcesses organize information about other abstractions and represent a single thing the computer is “doing”\n\nWhen you run an executable program (passive), the OS creates a process == a running program (active)\nOne program can be multiple processes"
+    "section": "UNIX process APIs",
+    "text": "UNIX process APIs\n\nfork() creates a new child process\n\nAll processes are created by forking from a parent\nThe init process is ancestor of all processes\n\nRun pstree in a terminal to see\n\n\nexec() makes a process execute a given executable (effectively replaces the process)\nexit() terminates a process\nwait() causes a parent to block until child terminates\nMany variants exist of the above system calls with different arguments"
   },
   {
-    "objectID": "day5.html#process-organization",
-    "href": "day5.html#process-organization",
+    "objectID": "day6.html#what-happens-during-a-fork",
+    "href": "day6.html#what-happens-during-a-fork",
     "title": "CSC 4553",
-    "section": "Process organization",
-    "text": "Process organization\n\n\n\nUnlike threads, address spaces and files, processes are not tied to a hardware component. Instead, they contain other abstractions\nProcesses contain:\n\none or more threads,\nan address space, and\nzero or more open file handles representing files"
+    "section": "What happens during a fork()?",
+    "text": "What happens during a fork()?\n\nA new process is created by making a copy of parent’s memory image\nBoth parent and child have unique address spaces (isolated from each other, allowing for independent processing)\nThe new process is added to the OS process list and scheduled\nParent and child start execution just after fork (with different return values)\nParent and child execute and modify the memory data independently"
   },
   {
-    "objectID": "day5.html#multiprogramming",
-    "href": "day5.html#multiprogramming",
+    "objectID": "day6.html#process-creation",
+    "href": "day6.html#process-creation",
     "title": "CSC 4553",
-    "section": "Multiprogramming",
-    "text": "Multiprogramming\n\nProcesses are the core abstraction that allows for multiprogramming: the illusion of concurrency\nOS timeshares CPU across multiple processes: virtualizes CPU\nOS has a CPU scheduler that picks one of the many active processes to execute on a CPU\nPolicy:\n\nwhich process to run\n\nMechanism:\n\nhow to context switch between processes"
+    "section": "Process creation",
+    "text": "Process creation\n\nDifferent execution models\n\nParent & child may execute independently\nParent may wait for child\nChild may create more children (Process hierarchies)\nParent may kill children\n\nChild often invokes exec() to change its memory image to a new program\nWhy two steps (fork() then exec())?\n\nAllows the child to change file descriptors and other settings before exec()"
   },
   {
-    "objectID": "day5.html#processs-view-of-the-world",
-    "href": "day5.html#processs-view-of-the-world",
+    "objectID": "day6.html#process-destruction",
+    "href": "day6.html#process-destruction",
     "title": "CSC 4553",
-    "section": "Process’s view of the world",
-    "text": "Process’s view of the world\n\nOwn memory with consistent addressing (divorced from physical addressing)\nIt has exclusivity over the CPU: It doesn’t have to worry about scheduling\nConversely, it doesn’t know when it will be scheduled, so real time events require special handling\nHas some identity: pid, gid, uid\nHas a set of services available to it via the OS\n\nData (via file system)\nCommunication (sockets, IPC)\nMore resources (e.g., memory)"
+    "section": "Process destruction",
+    "text": "Process destruction"
   },
   {
-    "objectID": "day5.html#process-memory-layout",
-    "href": "day5.html#process-memory-layout",
+    "objectID": "day6.html#process-destruction-contd",
+    "href": "day6.html#process-destruction-contd",
     "title": "CSC 4553",
-    "section": "Process memory layout",
-    "text": "Process memory layout\n\n\n\nText segment: machine instructions; shareable between identical processes; read-only\nData segment: for initialized data; e.g., int count = 99;\nBSS (block started by symbol) segment: uninitialized data; e.g., int sum[10];\nHeap: dynamic memory allocation\nStack: initial arguments and environment; stack frames"
+    "section": "Process destruction (cont’d)",
+    "text": "Process destruction (cont’d)\n\nSome operating systems do not allow child to exist if its parent has terminated. If a process terminates, then all its children must also be terminated\n\nCascading termination: All children, grandchildren, etc., are terminated.\nThe termination is initiated by the operating system\n\nThe parent process may wait for termination of a child process by using the wait() system call. The call returns status information and the pid of the terminated process\npid = wait(&status);"
   },
   {
-    "objectID": "day5.html#oss-view-of-the-process-world",
-    "href": "day5.html#oss-view-of-the-process-world",
+    "objectID": "day6.html#zombies-and-orphans",
+    "href": "day6.html#zombies-and-orphans",
     "title": "CSC 4553",
-    "section": "OS’s view of the (process) world",
-    "text": "OS’s view of the (process) world\n\n\n\nData for each process is held in a data structure known as a Process Control Block\nPartitioned memory:\n\ndedicated & shared address space\nperhaps non-contiguous\n\nProcess table holds PCBs"
+    "section": "Zombies and orphans",
+    "text": "Zombies and orphans\n\n\n\nIf no parent waiting (did not invoke wait()), and process completes, process is a zombie\n\nZombie = dead but not yet reaped (exit status hasn’t been read)\nStill has an entry in the process table\nWe need zombies: so the kernel can preserve a child’s exit status until the parent calls wait(), even if the child exits first\n\n\n\n\n\n\n\n\nIf parent terminated without invoking wait(), process is an orphan\n\nOrphan = alive but parent is gone\ninit benevolently adopts orphans\n\n\n\nChild exits → zombie\nParent exits → zombie becomes orphan\ninit adopts it → init calls wait() → zombie disappears"
   },
   {
-    "objectID": "day5.html#where-does-it-live",
-    "href": "day5.html#where-does-it-live",
-    "title": "CSC 4553",
-    "section": "Where does it live?",
-    "text": "Where does it live?\n\nThink (2 min): which segment holds each labeled item: text, data, BSS, heap, or stack?\nint   count = 99;              // (a) count\nchar  buf[4096];               // (b) buf\nint main(int argc, char **argv) {\n    int i = 0;                 // (c) i\n    char *p = malloc(1024);    // (d) p    (e) what p points to\n    printf(\"%d\\n\", count);     // (f) the literal \"%d\\n\"\n    return 0;                  // (g) the instructions of main() itself\n}\nDiscuss (2 min): compare answers. Which ones did you disagree on?\nQuestion (1 min): you run this same program twice, so there are two processes. Which segments could the OS share between them, and which have to be private?\n\n\nAnswers:\n\n\ncount — data: initialized, global, non-zero.\n\n\nbuf — BSS: global but uninitialized, so the executable only records “4096 zero bytes here” instead of storing 4096 zeros on disk. This is the whole reason BSS exists.\n\n\ni — stack: local to main, lives in main’s stack frame. So do argc and argv.\n\n\np — stack: p is itself a local variable, an 8-byte pointer in the frame.\n\n\nwhat p points to — heap: the 1024 bytes malloc returns. The classic student mistake is collapsing (d) and (e); the pointer and the pointee live in different segments, which is exactly why returning a pointer to a local is a bug but returning a malloc’d pointer is fine.\n\n\n\"%d\\n\" — text (or a read-only data section next to it). String literals are read-only; writing through a char * to one faults.\n\n\nthe code of main() — text.\n\n\nShare-out: text is identical across the two processes and read-only, so the OS maps one physical copy into both address spaces. Everything else has to be private — each process needs its own count, its own stack, its own heap. This is the payoff of the “shareable between identical processes” bullet, and it previews copy-on-write when we get to fork().\nIf a group finishes early: where do argv’s strings live, as opposed to the argv array? (Above the stack, in the region the kernel set up at exec time.)"
-  },
-  {
-    "objectID": "day5.html#section",
-    "href": "day5.html#section",
+    "objectID": "day6.html#section",
+    "href": "day6.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day5.html#questions-to-consider-1",
-    "href": "day5.html#questions-to-consider-1",
+    "objectID": "day6.html#questions-to-consider-1",
+    "href": "day6.html#questions-to-consider-1",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the different process states and what causes transitions?\nWhat is a context switch?\nWhat are the two general categories of processes and how do they differ?"
+    "text": "Questions to consider\n\nWhat are namespaces and cgroups?\nHow do they differ from virtual machines?\nHow do containers use them to isolate processes?"
   },
   {
-    "objectID": "day5.html#process-states",
-    "href": "day5.html#process-states",
+    "objectID": "day6.html#isolation-without-full-virtualization",
+    "href": "day6.html#isolation-without-full-virtualization",
     "title": "CSC 4553",
-    "section": "Process states",
-    "text": "Process states\n\nAs a process executes, it changes state\n\nNew: The process is being created\nRunning: Instructions are being executed\nWaiting: The process is waiting for some event (typically I/O or signal handling) to occur\nReady: The process is waiting to be assigned to a processor\nTerminated: The process has finished execution"
+    "section": "Isolation without full virtualization",
+    "text": "Isolation without full virtualization\n\nVirtual machines provide complete isolation by emulating entire hardware + OS\n\nHeavier resource overhead (multiple OS instances)\nBetter isolation between workloads\n\nContainers provide lightweight isolation using OS-level mechanisms\n\nShare the same kernel\nMuch lower overhead than VMs\nLinux kernel provides the building blocks: namespaces and cgroups"
   },
   {
-    "objectID": "day5.html#process-state-transitions",
-    "href": "day5.html#process-state-transitions",
+    "objectID": "day6.html#namespaces-logical-isolation-visibility",
+    "href": "day6.html#namespaces-logical-isolation-visibility",
     "title": "CSC 4553",
-    "section": "Process state transitions",
-    "text": "Process state transitions"
+    "section": "Namespaces: logical isolation (visibility)",
+    "text": "Namespaces: logical isolation (visibility)\n\nNamespaces partition global system resources so they appear as separate isolated instances\nEach process belongs to a namespace and only sees resources in that namespace\nTypes of namespaces:\n\nPID: process IDs (what processes can a process see?)\nNetwork: network interfaces, ports, routing tables\nMount: filesystem mounts (what can a process access?)\nIPC: IPC objects, message queues\nUTS: hostname and domain name\nUser: user and group IDs (who owns the process?)"
   },
   {
-    "objectID": "day5.html#process-state-transitions-contd",
-    "href": "day5.html#process-state-transitions-contd",
+    "objectID": "day6.html#namespaces-example",
+    "href": "day6.html#namespaces-example",
     "title": "CSC 4553",
-    "section": "Process state transitions (cont’d)",
-    "text": "Process state transitions (cont’d)\n\n\n\nRunning process can move from running to terminated (exit or killed), moved to ready (time slice up), or blocked (signaled to wait, I/O)\nWhich state transitions could happen with these expensive actions?\n\nCompute a new RSA key?\nFind the largest value in a 1TB of data?\n\n\n\n\n\n\n\n\n\nRunning to Waiting: This transition occurs when a process cannot continue executing until a specific event occurs. Here are some examples:\n\nI/O Operations:\n\nExample: A process needs to read data from a disk. It issues an I/O request and then moves to the Waiting state until the data is read and available.\nReal-World Scenario: A web server process waiting for data to be read from a database.\n\nResource Availability:\n\nExample: A process requires a resource (like a printer) that is currently in use by another process. It moves to the Waiting state until the resource becomes available.\nReal-World Scenario: A document editing application waiting for access to a shared printer.\n\nInter-Process Communication (IPC):\n\nExample: A process is waiting for a message from another process. It moves to the Waiting state until the message is received.\nReal-World Scenario: A chat application waiting for a message from a server.\n\nSynchronization Primitives:\n\nExample: A process is waiting for a lock or semaphore to be released by another process. It moves to the Waiting state until the lock is available.\nReal-World Scenario: A banking application waiting for a transaction lock to be released.\n\n\nRunning to Ready: This transition occurs when a process is preempted by the scheduler, but it is still ready to run as soon as it gets CPU time again. Here are some examples:\n\nTime Slice Expiration:\n\nExample: A process has used up its allocated time slice. The scheduler preempts it and moves it to the Ready state, allowing another process to run.\nReal-World Scenario: A video streaming application being preempted to allow a background update process to run.\n\nHigher Priority Process:\n\nExample: A higher priority process becomes ready to run. The scheduler preempts the current process and moves it to the Ready state.\nReal-World Scenario: An emergency alert system preempting a running media player application.\n\nVoluntary Yield:\n\nExample: A process voluntarily yields the CPU, indicating it can be preempted. The scheduler moves it to the Ready state.\nReal-World Scenario: A background data synchronization process yielding the CPU to allow a user-initiated task to run."
+    "section": "Namespaces example",
+    "text": "Namespaces example\n\nTwo processes in separate PID namespaces think they are PID 1 (init)\nEach sees only processes within their own namespace\nFrom the host OS perspective, they have different global PIDs\nEnables the illusion that each container has its own isolated process tree"
   },
   {
-    "objectID": "day5.html#state-transition-example",
-    "href": "day5.html#state-transition-example",
+    "objectID": "day6.html#seeing-namespaces-in-action",
+    "href": "day6.html#seeing-namespaces-in-action",
     "title": "CSC 4553",
-    "section": "State transition example",
-    "text": "State transition example\n\n\n\nThink (2 min): a running process calls read() on a file. Trace its state transitions from that moment until it gets its data back. Name what causes each transition\nDiscuss (2 min): compare traces. Did you agree on how many transitions there are, and on what triggers each one?\nShare (1 min): now the data is already in memory (the kernel cached it earlier), so no disk access is needed. Does your trace change?\n\n\n\n\n\n\n\n\nRunning → Waiting: the process calls read(), which traps into the kernel via a system call. The kernel issues the I/O request to the disk and moves the process to the Waiting state — there’s no point giving it the CPU since it literally cannot make progress until the data arrives. The process is now blocked.\nWaiting → Ready: the disk finishes reading and fires a hardware interrupt. The kernel’s interrupt handler runs, sees that this I/O completion is what the blocked process was waiting for, and moves it to the Ready state. Note: it does not go directly to Running — the scheduler still has to pick it.\nReady → Running: the scheduler eventually selects this process (maybe immediately, maybe after other processes run), performs a context switch, and restores its CPU state. Execution resumes on the instruction right after the read() system call — from the process’s perspective, read() just returned.\n\nCommon student mistakes to address: - Confusing Waiting and Ready: Waiting means blocked on an external event; Ready means runnable but waiting for CPU time. - Thinking the process goes directly from Waiting → Running: the scheduler always mediates. - Not recognizing the hardware interrupt as the trigger for step 2 — students often say “when the disk is done” without connecting it to the interrupt mechanism.\nShare-out (cached data): there are no transitions on this diagram at all. The kernel copies the bytes out of its cache and returns — the process stays Running the entire time, and there was never a reason to block it.\nBe careful here, because “nothing happens” is the wrong takeaway. The read() still traps into the kernel: it is a system call, and the page cache is kernel state, so there is no way to check “is it cached?” from user space. What happened is a mode switch (user → kernel → user), not a context switch. The process is still the running process; it’s just executing kernel code on its own behalf, which is why it never leaves the Running state. Worth putting both terms on the board side by side if this comes up — students routinely use them interchangeably, and the cached read() is the cleanest example of one happening without the other.\nTwo more points worth making: (1) blocking isn’t a property of read(), it’s a property of whether the data is available, so the same line of C can be a 100ns call or a 10ms block; (2) it could still lose the CPU here if its time slice expires (Running → Ready), but that’s the scheduler preempting it, not the I/O.\nIf someone asks whether the trap can be avoided: sometimes, but not for read(). The vDSO lets a few calls like gettimeofday() run entirely in user space, and io_uring amortizes the trap away by sharing submission/completion ring buffers with the kernel — both motivated by exactly this observation, that the mode switch is pure overhead when the data was there all along."
+    "section": "Seeing namespaces in action",
+    "text": "Seeing namespaces in action\n\nView namespaces a process belongs to:\nls -l /proc/self/ns/\nUse unshare to create a new PID namespace:\nunshare -pf --mount-proc bash      # creates new PID namespace, your shell is PID 1\nps aux               # only sees processes in this namespace\nexit                 # back to host namespace\nps aux               # will show all processes on the host\nCompare namespace inodes before and after (same inode = same namespace):\nls -i /proc/self/ns/pid\nunshare -pf --mount-proc bash -c 'ls -i /proc/self/ns/pid'  # different inode"
   },
   {
-    "objectID": "day5.html#process-scheduling",
-    "href": "day5.html#process-scheduling",
+    "objectID": "day6.html#cgroups-resource-limits",
+    "href": "day6.html#cgroups-resource-limits",
     "title": "CSC 4553",
-    "section": "Process scheduling",
-    "text": "Process scheduling\n\nOS process scheduler selects among available processes for next execution on CPU core\nGoal?\n\nMaximize CPU use, quickly switch processes onto CPU core\n\nMaintains scheduling queues of processes\n\nReady queue: set of all processes residing in main memory, ready and waiting to execute\nWait queues: set of processes waiting for an event (i.e., I/O)\n\nProcesses migrate among the various queues over their lifetime"
+    "section": "Cgroups: resource limits",
+    "text": "Cgroups: resource limits\n\ncgroups (control groups) limit, prioritize, and account for resource usage of process groups\nKey capabilities:\n\nCPU limits: restrict how much CPU time a group can use\nMemory limits: cap memory usage; OOM killer invoked if exceeded\nI/O limits: restrict disk I/O bandwidth\nDevice access: restrict which devices a process can access\n\nAll processes in a cgroup share the same resource limitations"
   },
   {
-    "objectID": "day5.html#context-switching",
-    "href": "day5.html#context-switching",
+    "objectID": "day6.html#seeing-cgroups-in-action",
+    "href": "day6.html#seeing-cgroups-in-action",
     "title": "CSC 4553",
-    "section": "Context switching",
-    "text": "Context switching\n\nWhen CPU switches to another process, the system must save the state of the old process and load the saved state for the new process via a context switch\nContext of a process represented in the PCB\nContext-switch time is pure overhead; the system does no useful work while switching\n\nThe more complex the OS and the PCB → the longer the context switch\n\nTime dependent on hardware support\n\nSome hardware provides multiple sets of registers per CPU → multiple contexts loaded at once"
+    "section": "Seeing cgroups in action",
+    "text": "Seeing cgroups in action\n\nView what cgroup a process belongs to:\ncat /proc/self/cgroup\nCheck your current limits:\ncat /proc/self/limits  # shows per-process limits (some enforced by cgroups)\nIn practice, cgroups are invisible to users, kernel enforces limits automatically when a process exceeds allocated resources"
   },
   {
-    "objectID": "day5.html#context-switching-overhead",
-    "href": "day5.html#context-switching-overhead",
+    "objectID": "day6.html#cgroups-vs.-namespaces",
+    "href": "day6.html#cgroups-vs.-namespaces",
     "title": "CSC 4553",
-    "section": "Context switching overhead",
-    "text": "Context switching overhead\n\nOn the order of microseconds on modern hardware, used to be milliseconds\nIf not done intelligently, you can spend more time context-switching than actual processing\nQuestion: Why shouldn’t processes control context switching?\n\n\n\nThey could refuse to give up CPU (processes are greedy)\nThey’re intentionally isolated, and don’t have enough information about other processes\nIt would cause too much complication (every process would have to implement its own context switch code)"
+    "section": "Cgroups vs. namespaces",
+    "text": "Cgroups vs. namespaces\n\nNamespaces: about visibility—what can a process see?\n\nLogical isolation of resources\n\ncgroups: about limits—how much can a process use?\n\nResource accounting and enforcement\n\nTogether: processes appear isolated AND are prevented from consuming excessive resources"
   },
   {
-    "objectID": "day5.html#scheduling-basics",
-    "href": "day5.html#scheduling-basics",
+    "objectID": "day6.html#containers-as-a-building-block",
+    "href": "day6.html#containers-as-a-building-block",
     "title": "CSC 4553",
-    "section": "Scheduling basics",
-    "text": "Scheduling basics\n\nScheduler usually makes the transition decisions; hides the details from the process/user\nProcesses often characterized as one of two types by what state they spend most of their time in\n\nI/O bound: work is dependent on I/O; e.g., browser, db, media streaming\nCPU bound: work is dependent on CPU; e.g., scientific apps, cryptography\nWhy does this matter?\n\nUnderstanding which your process is allows for optimization\n\nCPU-bound? Faster CPU, parallelize.\nI/O? Faster I/O devices, use async\n\n\n\nScheduler must balance CPU- & I/O-bound processes"
+    "section": "Containers as a building block",
+    "text": "Containers as a building block\n\ncgroups and namespaces are mechanisms, containers allow us to apply policy through orchestration\nContainers (e.g. Docker) allow for policy: that can be orchestrated by combining namespaces + cgroups + layered filesystems\nResults in lightweight, portable process isolation\nSingle kernel, multiple isolated environments\nMuch cheaper than VMs, but with worse isolation guarantees"
   },
   {
-    "objectID": "day5.html#section-1",
-    "href": "day5.html#section-1",
+    "objectID": "day6.html#namespace-or-cgroup",
+    "href": "day6.html#namespace-or-cgroup",
+    "title": "CSC 4553",
+    "section": "Namespace or cgroup?",
+    "text": "Namespace or cgroup?\n\nThink (2 min): for each symptom, is the mechanism you need a namespace, a cgroup, or both?\n\nA process in one container runs ps aux and sees another container’s processes\nOne container’s runaway loop pegs all 8 cores; everything else crawls\nTwo containers each want to bind port 80\nA container can read /etc/shadow from the host filesystem\nA container allocates until the host itself starts swapping\nA process is PID 1 to itself but PID 4242 to the host\n\nDiscuss (2 min): compare. Any you’d label “both?”\nShare (1 min): which of these is a security boundary? If containers do all of this, why do cloud providers still run untrusted code in VMs?\n\n\nAnswers: (1) namespace (PID) — (2) cgroup (CPU) — (3) namespace (network) — (4) namespace (mount) — (5) cgroup (memory) — (6) namespace (PID).\nThe pattern to draw out: every “it can see something it shouldn’t” is a namespace, every “it used more than its share” is a cgroup. Visibility vs. limits, which is the previous slide restated as a diagnostic.\n“Both” is defensible on (5): a memory cgroup caps it, but the container also shouldn’t be able to see the host’s total memory in the first place — a container reading /proc/meminfo gets the host’s numbers, which is a real and famous problem (JVMs and Go runtimes sizing their heaps off the host’s RAM and then getting OOM-killed). Worth mentioning if it comes up; it shows the two mechanisms aren’t as cleanly separated as the slide implies.\nShare-out: neither one is really a security boundary, and that’s the point of the last bullet on the containers slide. Both are enforced by kernel code, and all containers share one kernel — a single kernel bug reachable through a syscall gets you out of every namespace and cgroup at once. A VM’s boundary is the hardware’s, enforced by the CPU’s virtualization support, so escaping needs a hypervisor bug rather than a kernel bug — a much smaller attack surface. This is exactly why AWS Lambda and Fargate run on Firecracker microVMs rather than plain containers: multi-tenant untrusted code gets a hardware boundary, and containers are for isolating your own workloads from each other."
+  },
+  {
+    "objectID": "day6.html#section-1",
+    "href": "day6.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
