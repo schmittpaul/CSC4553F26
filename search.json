@@ -1,161 +1,154 @@
 [
   {
-    "objectID": "day7.html#admin",
-    "href": "day7.html#admin",
+    "objectID": "day8.html#admin",
+    "href": "day8.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nProgramming assignment 1 due Wednesday, 18:00"
+    "text": "Admin\n\nDon’t forget to sign up for assignment 1 review https://calendar.app.google/71iRFEG6RNLqf9P29\nLab due Friday, 18:00\nQuiz due Monday, 18:00"
   },
   {
-    "objectID": "day7.html#questions-to-consider",
-    "href": "day7.html#questions-to-consider",
+    "objectID": "day8.html#questions-to-consider",
+    "href": "day8.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the two main strategies for IPC?\nHow do they differ?\nIn what situations would you choose one over the other?"
+    "text": "Questions to consider\n\nWhat are the differences / tradeoffs between preemptive and non-preemptive scheduling algorithms?\nWhat are the metrics we can attempt to optimize scheduling for a given scenario?"
   },
   {
-    "objectID": "day7.html#processes-give-us-a-protection-boundary",
-    "href": "day7.html#processes-give-us-a-protection-boundary",
+    "objectID": "day8.html#preemptive-vs.-non-preemptive-scheduling",
+    "href": "day8.html#preemptive-vs.-non-preemptive-scheduling",
     "title": "CSC 4553",
-    "section": "Processes give us a protection boundary",
-    "text": "Processes give us a protection boundary\n\nThe operating system is responsible for isolating processes from each other\nWhat you do in your own process is your own business but it shouldn’t be able to crash the machine or affect other processes, or at least processes started by other users\nThus: safe intra-process communication is your problem; safe inter-process communication is an operating system problem"
+    "section": "Preemptive vs. non-preemptive scheduling",
+    "text": "Preemptive vs. non-preemptive scheduling\n\nNon-Preemptive: The scheduler only makes scheduling decisions when a process voluntarily gives up the CPU (e.g., by blocking on I/O, completing, or explicitly yielding).\nPreemptive: The scheduler can interrupt a running process and move it to the ready queue at any time (based on time slices, priority changes, etc.), even while it’s actively executing.\nNon-preemptive is easier to implement, but\n\n… doesn’t support multiprogramming very well\n\nPreemptive can be complicated: correctness, utilization, flexibility\n\nSay a process P is preempted while in the middle of inserting an element in a data structure that another process (which is chosen by the scheduler) is going to process"
   },
   {
-    "objectID": "day7.html#why-do-we-need-ipc-what-are-the-benefits",
-    "href": "day7.html#why-do-we-need-ipc-what-are-the-benefits",
+    "objectID": "day8.html#scheduling-metrics",
+    "href": "day8.html#scheduling-metrics",
     "title": "CSC 4553",
-    "section": "Why do we need IPC? What are the benefits?",
-    "text": "Why do we need IPC? What are the benefits?\n\nData Sharing: IPC allows processes to share data efficiently, which is crucial for applications requiring real-time data exchange\nModularity: It promotes modularity by enabling different parts of a system to communicate, making the system easier to manage and scale\nResource Utilization: IPC can help optimize resource utilization by allowing processes to coordinate their use of shared resources\nConcurrency (scalability): It supports concurrent execution of processes, improving the overall performance and responsiveness of applications"
+    "section": "Scheduling metrics",
+    "text": "Scheduling metrics\n\nCPU utilization: keep the CPU as busy as possible\nThroughput: # of processes that complete their execution per unit time\nTurnaround time: amount of time to execute a particular process (from submission to completion)\nWaiting time: amount of time a process spends in the ready queue\nResponse time: amount of time it takes from when a request was submitted until the first response is produced"
   },
   {
-    "objectID": "day7.html#what-are-the-disadvantages-of-ipc",
-    "href": "day7.html#what-are-the-disadvantages-of-ipc",
+    "objectID": "day8.html#scheduling-scenarios",
+    "href": "day8.html#scheduling-scenarios",
     "title": "CSC 4553",
-    "section": "What are the disadvantages of IPC?",
-    "text": "What are the disadvantages of IPC?\n\nComplexity: Implementing IPC can add complexity to the system, requiring careful design and management to avoid issues like deadlocks and race conditions\nOverhead: IPC mechanisms can introduce overhead, potentially impacting performance, especially if the communication is frequent or involves large amounts of data\nSecurity: Ensuring secure IPC can be challenging, as it involves protecting data from unauthorized access and ensuring the integrity of the communication\nDebugging: Debugging IPC-related issues can be difficult, as problems may arise from interactions between multiple processes, making them harder to isolate and resolve"
+    "section": "Scheduling scenarios",
+    "text": "Scheduling scenarios\nWhich metric would you optimize for these situations?\n\n\n\nYou run a data center that charges based on jobs completed\n\nMax throughput: maximize the number of jobs processed per unit time\n\nYou run GeForce Now\n\nMin response time: user experience is the main concern\n\nYou run Github Actions or Travis CI\n\nMin turnaround time: developers need feedback quickly\n\nYou run a supercomputing center\n\nMaximize CPU usage: this stuff is expensive, use it efficiently\n\n\n\n\n\n\nCPU utilization\nThroughput\nTurnaround time\nWaiting time\nResponse time"
   },
   {
-    "objectID": "day7.html#what-are-the-two-main-categories-of-ipc",
-    "href": "day7.html#what-are-the-two-main-categories-of-ipc",
+    "objectID": "day8.html#example-scheduling-a-911-system",
+    "href": "day8.html#example-scheduling-a-911-system",
     "title": "CSC 4553",
-    "section": "What are the two main categories of IPC?",
-    "text": "What are the two main categories of IPC?\n\nMessage passing\n\nHigh-level abstraction for exchanging packets of information over some interconnect\n\nShared memory\n\nRegion of memory available to different processes; writable by at least one process"
+    "section": "Example: Scheduling a 911 system",
+    "text": "Example: Scheduling a 911 system\nYou’re designing a scheduler for a 911 emergency dispatch system. Which metric matters most? Are there any metrics from the list that would be actively harmful to optimize for?\n\nResponse time is the critical metric — a dispatcher needs to see and act on an incoming call immediately. Any delay between a call arriving and the dispatcher’s screen updating is unacceptable.\nWhat’s actively harmful to optimize for:\n\nThroughput: maximizing calls handled per unit time could cause the scheduler to deprioritize long-running dispatch sessions (active incidents) in favor of shorter ones — exactly backwards.\nCPU utilization: keeping the CPU busy is irrelevant and potentially dangerous. If a high-priority dispatch process needs to run, the CPU should be idle rather than burning cycles on something else.\nTurnaround time: this measures total time from start to finish of a process, which doesn’t map well onto an always-on system handling continuous events.\n\nNo single metric is universally correct — the right metric depends entirely on what the system is for. Note: real safety-critical systems often use priority scheduling with hard real-time guarantees, not the algorithms we’re studying (which are designed for general-purpose throughput/fairness)."
   },
   {
-    "objectID": "day7.html#message-passing",
-    "href": "day7.html#message-passing",
+    "objectID": "day8.html#what-does-the-os-scheduler-know-about-a-process",
+    "href": "day8.html#what-does-the-os-scheduler-know-about-a-process",
     "title": "CSC 4553",
-    "section": "Message passing",
-    "text": "Message passing\n\nKernel establishes and oversees all communication\n\nProcess copies data to buffer, then issue system call to request transfer\nKernel copies data into its memory\nLater, process issues system call to retrieve\n\nTwo primitives: send() and recv()\nBeyond intra-computer communication, facilitates processes over a network; link implementation is unimportant"
+    "section": "What does the OS scheduler know about a process?",
+    "text": "What does the OS scheduler know about a process?\n\nProcess characteristics that we’d like to know in order to achieve our goals\n\nProcessing Time (Burst Time)\nI/O Requirements\nPriority\nAge\nDependencies\n\nThe scheduler knows very little of the above\nIn many cases we are hoping to predict the future. Easy, right?"
   },
   {
-    "objectID": "day7.html#pros-and-cons-of-message-passing",
-    "href": "day7.html#pros-and-cons-of-message-passing",
-    "title": "CSC 4553",
-    "section": "Pros and cons of message passing?",
-    "text": "Pros and cons of message passing?\n\nPros:\n\nEasier to implement and manage, especially in distributed systems\nProvides clear boundaries between processes, enhancing security and modularity\n\nCons:\n\nCan introduce overhead due to the need for message formatting and transmission\nMay be slower compared to shared memory for large volumes of data"
-  },
-  {
-    "objectID": "day7.html#shared-memory",
-    "href": "day7.html#shared-memory",
-    "title": "CSC 4553",
-    "section": "Shared memory",
-    "text": "Shared memory\n\nKernel plays a role in establishing and attaching the address space, but does not control read/write access beyond that\nHow the memory is shared, and kept consistent, is left up to the processes"
-  },
-  {
-    "objectID": "day7.html#pros-and-cons-of-shared-memory",
-    "href": "day7.html#pros-and-cons-of-shared-memory",
-    "title": "CSC 4553",
-    "section": "Pros and cons of shared memory?",
-    "text": "Pros and cons of shared memory?\n\nPros:\n\nOffers high-speed data exchange, as processes can directly read and write to the shared memory\nEfficient for large volumes of data\n\nCons:\n\nRequires careful synchronization to avoid conflicts and ensure data consistency\nCan be more complex to implement and debug"
-  },
-  {
-    "objectID": "day7.html#section",
-    "href": "day7.html#section",
+    "objectID": "day8.html#section",
+    "href": "day8.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day7.html#questions-to-consider-1",
-    "href": "day7.html#questions-to-consider-1",
+    "objectID": "day8.html#questions-to-consider-1",
+    "href": "day8.html#questions-to-consider-1",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow do pipes differ from FIFOs and when would you use each?\nWhat considerations matter when choosing between pipes, FIFOs, and memory-mapped files?"
+    "text": "Questions to consider\n\nHow do FCFS, SJF, and SRTF compare in terms of tradeoffs between waiting time and response time?\nWhy does SJF require predicting future CPU bursts, and how can we estimate them?\nWhat is starvation in the context of scheduling, and how can we prevent it?"
   },
   {
-    "objectID": "day7.html#pipes-anonymous-pipes",
-    "href": "day7.html#pipes-anonymous-pipes",
+    "objectID": "day8.html#batch-scheduling-fcfs",
+    "href": "day8.html#batch-scheduling-fcfs",
     "title": "CSC 4553",
-    "section": "Pipes (anonymous pipes)",
-    "text": "Pipes (anonymous pipes)\n\nPipes are unidirectional; one end must be designated as the reading end and the other as the writing end\nPipes are order preserving; all data read from the receiving end of the pipe will match the order in which it was written into the pipe\nPipes have a limited capacity and they use blocking I/O; if a pipe is full, any additional writes to the pipe will block the process until some of the data has been read\nPipes send data as unstructured byte streams. There are no pre-defined characteristics to the data exchanged, such as a predictable message length"
+    "section": "Batch scheduling: FCFS",
+    "text": "Batch scheduling: FCFS\n\n\n\nFirst-Come, First-Served (FCFS)\nNon-preemptive\nPros:\n\nEasy to understand, easy to implement\n\nCons?\n\nWaiting time & turnaround time have high variance\nExample: 1 long CPU-bound process and many I/O bound processes\n\nConvoy effect"
   },
   {
-    "objectID": "day7.html#pipes-contd",
-    "href": "day7.html#pipes-contd",
+    "objectID": "day8.html#fcfs-example",
+    "href": "day8.html#fcfs-example",
     "title": "CSC 4553",
-    "section": "Pipes (cont’d)",
-    "text": "Pipes (cont’d)\n\nPipes create a producer-consumer buffer between two processes\nCannot be accessed outside of the creating process (child inherits the pipe since it’s a fd)\nThe operating system manages a queue for each pipe to accommodate different input and output rates\nFacilitates the canonical chaining together of small UNIX utilities to do more sophisticated processing"
+    "section": "FCFS example",
+    "text": "FCFS example\n\n\n\nCalculate the average waiting time:\nOrder: P1, P2, P3 \nWaiting time P1 = 0; P2 = 24; P3 = 27\nAverage waiting time: \\((0 + 24 + 27)/3 = 17\\)\nOrder P2, P3, P1 \nWaiting time P1 = 6; P2 = 0; P3 = 3\nAverage waiting time: \\((6 + 0 + 3)/3 = 3\\)\n\n\n\n\nProcess Burst Time\n  P1         24\n  P2          3\n  P3          3"
   },
   {
-    "objectID": "day7.html#pipe-bugs",
-    "href": "day7.html#pipe-bugs",
+    "objectID": "day8.html#okay-fcfs-can-be-bad",
+    "href": "day8.html#okay-fcfs-can-be-bad",
     "title": "CSC 4553",
-    "section": "Pipe bugs",
-    "text": "Pipe bugs\nint pipefd[2];\npipe (pipefd);\n\nif (fork () == 0)\n  exit (0);\n\nchar buffer[10];\nread (pipefd[0], buffer, sizeof (buffer));\n\nWhat will happen here?\n\nParent will block indefinitely. Since the child exits without writing anything, and the parent has not closed its own write end, the read end never sees EOF (EOF is only signaled when all write ends are closed)."
+    "section": "Okay, FCFS can be bad",
+    "text": "Okay, FCFS can be bad\nCan we think of a better algorithm to deal with the reality that jobs run for different amounts of time?"
   },
   {
-    "objectID": "day7.html#named-pipes-also-known-as-fifos",
-    "href": "day7.html#named-pipes-also-known-as-fifos",
+    "objectID": "day8.html#batch-scheduling-shortest-job-first-sjf",
+    "href": "day8.html#batch-scheduling-shortest-job-first-sjf",
     "title": "CSC 4553",
-    "section": "Named pipes (also known as FIFOs)",
-    "text": "Named pipes (also known as FIFOs)\n\nOf course there is another type that don’t share the same characteristics\nNamed pipes don’t require a parent-child relationship\n\nCreates a persistent file-like name\nRequire a reader and writer\nCan be used for unrelated processes to communicate"
+    "section": "Batch scheduling: shortest job first (SJF)",
+    "text": "Batch scheduling: shortest job first (SJF)\n\n\n\nOrdered by length of the process’s next CPU burst\nNon-preemptive\nPros?\n\nOptimal average waiting time among non-preemptive algorithms\n\nCons?\n\nRequires knowing the future (potentially okay in some situations; examples?)\n\nScientific jobs, batch jobs\n\n\nQuestion: how do we know the length of the upcoming CPU burst?\n\nAsk the process? Estimate? How?"
   },
   {
-    "objectID": "day7.html#named-pipes-contd",
-    "href": "day7.html#named-pipes-contd",
+    "objectID": "day8.html#sjf-how-can-we-predict-the-future",
+    "href": "day8.html#sjf-how-can-we-predict-the-future",
     "title": "CSC 4553",
-    "section": "Named pipes (cont’d)",
-    "text": "Named pipes (cont’d)\n\nReally a data stream (ordering, buffering, reliability, authentication all implied)\nThey are not regular files, though they look like them\n\nOnce data has been read from a FIFO, the data is discarded and cannot be read again\nCannot broadcast: only one read()\nNot wise to use bidirectionally, why?"
+    "section": "SJF: how can we predict the future?",
+    "text": "SJF: how can we predict the future?\n\nWe can’t trust a process to tell the truth\nWe can only estimate, how?\n\nThe past (with the hope that the process will act like it has before)\n\nExponential weighted moving average: \\[\nEWMA_t = \\alpha \\times x_t + (1 - \\alpha) \\times EWMA_{t-1}\n\\]\n\\(\\alpha = 0\\)? New measurement does not get taken into account\n\\(\\alpha = 1\\)? History does not get taken into account\n\\(\\alpha\\) is often set to .5"
   },
   {
-    "objectID": "day7.html#shared-memory-with-mmap",
-    "href": "day7.html#shared-memory-with-mmap",
+    "objectID": "day8.html#ewma-example",
+    "href": "day8.html#ewma-example",
     "title": "CSC 4553",
-    "section": "Shared memory with mmap",
-    "text": "Shared memory with mmap\n\n\n\nMemory-mapped files allow for multiple processes to share read-only access to a common file. Example: libc.so mapped into all running C programs\nData is accessed directly from the page cache without an extra copy into a user buffer\n\n\n\n\n\n\n\nProvide extremely fast IPC data exchange. i.e., when one process writes to the region, that data is immediately accessible by the other process without having to invoke a system call\nUnlike pipes, memory-mapped files create persistent IPC. Once the data is written to the shared region, it can be repeatedly accessed by other processes"
+    "section": "EWMA example",
+    "text": "EWMA example\n\\[\nEWMA_t = \\alpha \\times x_t + (1 - \\alpha) \\times EWMA_{t-1}\n\\]\n\nSuppose \\(\\alpha = 0.5\\) and a process has had burst times: 10, 6, 4, 6, …\n\\(EWMA_0 = 10\\)\n\\(EWMA_1 = 0.5 \\times 6 + 0.5 \\times 10 = 3 + 5 = 8\\)\n\\(EWMA_2 = 0.5 \\times 4 + 0.5 \\times 8 = 2 + 4 = 6\\)\n\\(EWMA_3 = 0.5 \\times 6 + 0.5 \\times 6 = 3 + 3 = 6\\)\nRecent values pull the estimate toward them, but history still matters"
   },
   {
-    "objectID": "day7.html#memory-mapped-files-posix-and-system-v",
-    "href": "day7.html#memory-mapped-files-posix-and-system-v",
+    "objectID": "day8.html#sjf-example",
+    "href": "day8.html#sjf-example",
     "title": "CSC 4553",
-    "section": "Memory mapped files: POSIX and System V",
-    "text": "Memory mapped files: POSIX and System V\n\nThese two ultimately mmap a file, but do some trickery beforehand and use special files\nPOSIX == named, RAM-backed file descriptors\n\nname → fd → mmap\nusually backed by tmpfs (/dev/shm)\n\nSystem V shared memory\n\nPredates POSIX - designed before file descriptors were a universal abstraction\nKernel-persistent objects, you must clean up manually\n\nProcess exits ≠ memory freed"
+    "section": "SJF example",
+    "text": "SJF example\n\n\n\nGantt: \nAverage waiting time: \\((3 + 16 + 9 + 0)/4 = 7\\)\nVersus FCFS: \\((0 + 6 + 14 + 21)/4 = 10.25\\)\n\n\n\n\n    Process Burst Time\n      P1          6\n      P2          8\n      P3          7\n      P4          3"
   },
   {
-    "objectID": "day7.html#posix-vs.-system-v",
-    "href": "day7.html#posix-vs.-system-v",
+    "objectID": "day8.html#do-you-see-any-problems-with-sjf",
+    "href": "day8.html#do-you-see-any-problems-with-sjf",
     "title": "CSC 4553",
-    "section": "POSIX vs. System V",
-    "text": "POSIX vs. System V\n\nPOSIX is great, right!?\n\nPOSIX (e.g., shm_open()) IPC may not work in your favor in macOS\nSome questionable engineer (obviously not a CP grad) decided to provide the header files for certain things, but they are empty stubs\n\nIt will compile, but could be bad\n\n\nSystem V is “fine”\n\nshmget(): allocate\nshmat(): attach\nshmdt(): detach\nshmctl(): control (destroy with IPC_RMID)"
+    "section": "Do you see any problems with SJF?",
+    "text": "Do you see any problems with SJF?\n\nWhat do we do if a short process arrives after SJF has started a long running process? \nWhat should we do?\n\nPreempt"
   },
   {
-    "objectID": "day7.html#message-passing-vs.-shared-memory",
-    "href": "day7.html#message-passing-vs.-shared-memory",
+    "objectID": "day8.html#shortest-remaining-time-first-srtf",
+    "href": "day8.html#shortest-remaining-time-first-srtf",
     "title": "CSC 4553",
-    "section": "Message passing vs. shared memory",
-    "text": "Message passing vs. shared memory\n\n\nA camera captures frames at 30fps and a separate process runs AI inference on each frame. Which IPC mechanism would you use? What happens if inference is slower than capture?\n\n\n\n “Gemini, make an image in the style of a video game pitting pipes versus shared memory”\n\n\nShared memory is the right answer here — here’s why:\n\nEach frame is large (e.g., 1080p = ~6MB uncompressed). Copying that through the kernel on every frame via message passing adds up fast: at 30fps that’s 180MB/s of unnecessary kernel copies.\nWith shared memory, the camera process writes the frame into a shared buffer and signals the inference process — no copy needed.\n\nWhat happens when inference is slower than capture: - With a pipe/message queue: frames queue up. The buffer fills, writes block, and eventually the camera process stalls — you drop frames at the source. - With shared memory + a ring buffer: the writer can overwrite old frames. You still drop frames, but the camera keeps running and the inference process always gets the most recent frame — often the right tradeoff for real-time systems (stale data is worse than no data).\nFollow-up questions:\n\nWho synchronizes access to the shared buffer? (Needs a mutex or semaphore — the OS doesn’t help here.)\nWhat if you need the inference results sent back? (Probably message passing for the small result, shared memory for the frame data.)\nWhat changes if the camera and inference run on different machines? (Shared memory is off the table; forced into message passing over a network.)"
+    "section": "Shortest remaining time first (SRTF)",
+    "text": "Shortest remaining time first (SRTF)\n\n\n\nPreemptive version of SJF\nWhenever a new process arrives in the ready queue, the decision on which process to schedule next is redone using the SJF algorithm\nQuestion: is SRTF more optimal than SJF for any metrics?\n\nYes, average waiting time is minimized"
   },
   {
-    "objectID": "day7.html#demo",
-    "href": "day7.html#demo",
+    "objectID": "day8.html#srtf-example",
+    "href": "day8.html#srtf-example",
     "title": "CSC 4553",
-    "section": "Demo",
-    "text": "Demo"
+    "section": "SRTF example",
+    "text": "SRTF example\n    Process      Arrival Time   Burst Time\n     P1               0             8\n     P2               1             4\n     P3               2             9\n     P4               3             5\n\nAverage waiting time = \\([(0+9)+(0)+(15)+(2)]/4 = 26/4 = 6.5\\)"
   },
   {
-    "objectID": "day7.html#section-1",
-    "href": "day7.html#section-1",
+    "objectID": "day8.html#do-you-see-any-problems-with-srtf",
+    "href": "day8.html#do-you-see-any-problems-with-srtf",
+    "title": "CSC 4553",
+    "section": "Do you see any problems with SRTF?",
+    "text": "Do you see any problems with SRTF?\n\nComputers aren’t static. What if short jobs continuously arrive?\n\nLarge jobs can starve\nUrban legend about IBM 7074 at MIT: when shut down in 1973, low-priority processes were found which had been submitted in 1967 and had not yet been run…"
+  },
+  {
+    "objectID": "day8.html#priority-scheduling",
+    "href": "day8.html#priority-scheduling",
+    "title": "CSC 4553",
+    "section": "Priority scheduling",
+    "text": "Priority scheduling\n\n“Shortest” algos are examples of priority scheduling\nI.e., scheduling is based on some metric of priority\nDownsides\n\nIf not implemented carefully, indefinite blocking / starvation\nHow do we prevent starvation?\n\nAging: gradually increase the priority of processes that wait in the system for a long time"
+  },
+  {
+    "objectID": "day8.html#section-1",
+    "href": "day8.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
