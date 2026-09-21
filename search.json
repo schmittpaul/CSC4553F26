@@ -1,154 +1,196 @@
 [
   {
-    "objectID": "day8.html#admin",
-    "href": "day8.html#admin",
+    "objectID": "day9.html#admin",
+    "href": "day9.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nDon’t forget to sign up for assignment 1 review https://calendar.app.google/71iRFEG6RNLqf9P29\nLab due Friday, 18:00\nQuiz due Monday, 18:00"
+    "text": "Admin\n\nDon’t forget to sign up for assignment 1 review https://calendar.app.google/71iRFEG6RNLqf9P29"
   },
   {
-    "objectID": "day8.html#questions-to-consider",
-    "href": "day8.html#questions-to-consider",
+    "objectID": "day9.html#questions-to-consider",
+    "href": "day9.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the differences / tradeoffs between preemptive and non-preemptive scheduling algorithms?\nWhat are the metrics we can attempt to optimize scheduling for a given scenario?"
+    "text": "Questions to consider\n\nWhat are the key differences between batch and interactive scheduling algorithms?\nHow does Round Robin improve response time compared to SJF, and what tradeoff does it introduce?\nWhy might a system benefit from using multiple scheduling queues rather than a single algorithm?"
   },
   {
-    "objectID": "day8.html#preemptive-vs.-non-preemptive-scheduling",
-    "href": "day8.html#preemptive-vs.-non-preemptive-scheduling",
+    "objectID": "day9.html#why-batch-algorithms-arent-enough",
+    "href": "day9.html#why-batch-algorithms-arent-enough",
     "title": "CSC 4553",
-    "section": "Preemptive vs. non-preemptive scheduling",
-    "text": "Preemptive vs. non-preemptive scheduling\n\nNon-Preemptive: The scheduler only makes scheduling decisions when a process voluntarily gives up the CPU (e.g., by blocking on I/O, completing, or explicitly yielding).\nPreemptive: The scheduler can interrupt a running process and move it to the ready queue at any time (based on time slices, priority changes, etc.), even while it’s actively executing.\nNon-preemptive is easier to implement, but\n\n… doesn’t support multiprogramming very well\n\nPreemptive can be complicated: correctness, utilization, flexibility\n\nSay a process P is preempted while in the middle of inserting an element in a data structure that another process (which is chosen by the scheduler) is going to process"
+    "section": "Why batch algorithms aren’t enough",
+    "text": "Why batch algorithms aren’t enough\n\nBatch algorithms optimize for throughput, turnaround, and waiting time\nBut what if a user is at the keyboard?\n\nYou click a button (e.g., while a long batch job is running) you wait 3 seconds for any response\nA web server needs to respond to thousands of short requests, not just finish jobs quickly\n\nMetric to focus on: response time: time from request submission to first response\nBatch algorithms ignore this entirely"
   },
   {
-    "objectID": "day8.html#scheduling-metrics",
-    "href": "day8.html#scheduling-metrics",
+    "objectID": "day9.html#batch-vs.-interactive-scheduling",
+    "href": "day9.html#batch-vs.-interactive-scheduling",
     "title": "CSC 4553",
-    "section": "Scheduling metrics",
-    "text": "Scheduling metrics\n\nCPU utilization: keep the CPU as busy as possible\nThroughput: # of processes that complete their execution per unit time\nTurnaround time: amount of time to execute a particular process (from submission to completion)\nWaiting time: amount of time a process spends in the ready queue\nResponse time: amount of time it takes from when a request was submitted until the first response is produced"
+    "section": "Batch vs. interactive scheduling",
+    "text": "Batch vs. interactive scheduling\n\n\nBatch Scheduling\n\nOptimizes for: throughput, turnaround time, waiting time\nContext: data centers, HPC, background jobs\nUsers don’t interact with running jobs\n\n\n\n\nInteractive Scheduling\n\nOptimizes for: response time, fairness\nContext: desktop/laptop systems, servers\nUsers expect quick feedback to their actions"
   },
   {
-    "objectID": "day8.html#scheduling-scenarios",
-    "href": "day8.html#scheduling-scenarios",
+    "objectID": "day9.html#what-about-response-time",
+    "href": "day9.html#what-about-response-time",
     "title": "CSC 4553",
-    "section": "Scheduling scenarios",
-    "text": "Scheduling scenarios\nWhich metric would you optimize for these situations?\n\n\n\nYou run a data center that charges based on jobs completed\n\nMax throughput: maximize the number of jobs processed per unit time\n\nYou run GeForce Now\n\nMin response time: user experience is the main concern\n\nYou run Github Actions or Travis CI\n\nMin turnaround time: developers need feedback quickly\n\nYou run a supercomputing center\n\nMaximize CPU usage: this stuff is expensive, use it efficiently\n\n\n\n\n\n\nCPU utilization\nThroughput\nTurnaround time\nWaiting time\nResponse time"
+    "section": "What about response time?",
+    "text": "What about response time?\n\n\n\nSRTF is good if we know job lengths and we’re only worried about turnaround / waiting time\nSJF: poor response\nRR: better response"
   },
   {
-    "objectID": "day8.html#example-scheduling-a-911-system",
-    "href": "day8.html#example-scheduling-a-911-system",
+    "objectID": "day9.html#interactive-algorithm-round-robin-rr",
+    "href": "day9.html#interactive-algorithm-round-robin-rr",
     "title": "CSC 4553",
-    "section": "Example: Scheduling a 911 system",
-    "text": "Example: Scheduling a 911 system\nYou’re designing a scheduler for a 911 emergency dispatch system. Which metric matters most? Are there any metrics from the list that would be actively harmful to optimize for?\n\nResponse time is the critical metric — a dispatcher needs to see and act on an incoming call immediately. Any delay between a call arriving and the dispatcher’s screen updating is unacceptable.\nWhat’s actively harmful to optimize for:\n\nThroughput: maximizing calls handled per unit time could cause the scheduler to deprioritize long-running dispatch sessions (active incidents) in favor of shorter ones — exactly backwards.\nCPU utilization: keeping the CPU busy is irrelevant and potentially dangerous. If a high-priority dispatch process needs to run, the CPU should be idle rather than burning cycles on something else.\nTurnaround time: this measures total time from start to finish of a process, which doesn’t map well onto an always-on system handling continuous events.\n\nNo single metric is universally correct — the right metric depends entirely on what the system is for. Note: real safety-critical systems often use priority scheduling with hard real-time guarantees, not the algorithms we’re studying (which are designed for general-purpose throughput/fairness)."
+    "section": "Interactive algorithm: Round Robin (RR)",
+    "text": "Interactive algorithm: Round Robin (RR)\n\nFCFS with preemption\nBased on a time quantum (time slice)\n\nTypically 10-100 milliseconds\nHow do we pick a quantum?\n\nVery short: a lot of context switching (need a large quantum, otherwise overhead is too much to be worth it)\nVery long -&gt; becomes FCFS: long wait times, long turnaround times\n\nCircular queue\n\nNew processes are added to the tail\nIf a process doesn’t complete during its quantum, context switch and added to the tail"
   },
   {
-    "objectID": "day8.html#what-does-the-os-scheduler-know-about-a-process",
-    "href": "day8.html#what-does-the-os-scheduler-know-about-a-process",
+    "objectID": "day9.html#rr-example",
+    "href": "day9.html#rr-example",
     "title": "CSC 4553",
-    "section": "What does the OS scheduler know about a process?",
-    "text": "What does the OS scheduler know about a process?\n\nProcess characteristics that we’d like to know in order to achieve our goals\n\nProcessing Time (Burst Time)\nI/O Requirements\nPriority\nAge\nDependencies\n\nThe scheduler knows very little of the above\nIn many cases we are hoping to predict the future. Easy, right?"
+    "section": "RR example",
+    "text": "RR example\n\n\n\nAverage waiting time:  \\[[(10-4) + 4 + 7] = 17/3 = 5.66\\]\nPros:\n\nRR is fair, but do we really want fair???\nTypically, higher average turnaround than SJF, but better response\n\nCons?\n\nLong average waiting times\n\n\n\n\n\nProcess Burst Time\n  P1        24\n  P2        3\n  P3        3\n\n  Quantum = 4"
   },
   {
-    "objectID": "day8.html#section",
-    "href": "day8.html#section",
+    "objectID": "day9.html#gaming-rr",
+    "href": "day9.html#gaming-rr",
+    "title": "CSC 4553",
+    "section": "Gaming RR",
+    "text": "Gaming RR\nYou’re working on an important project and need to maximize your CPU time. You don’t care about fairness (or your colleagues). How could a programmer “cheat” RR to get more than their fair share of the CPU?\n\n\nSpin up many processes (split tasks up and fork children)\nJob A: 9 processes, Job B: 1 process → A gets 90% of CPU in RR\nThis actually happens in many systems that aim for rudimentary fairness"
+  },
+  {
+    "objectID": "day9.html#fcfs-sjf-srtf-rr",
+    "href": "day9.html#fcfs-sjf-srtf-rr",
+    "title": "CSC 4553",
+    "section": "FCFS, SJF, SRTF, RR",
+    "text": "FCFS, SJF, SRTF, RR\n\nAll have downsides\nThose that optimize turnaround / wait, can harm response time\nThose that optimize response time, can harm turnaround, wait\nWhat should we do?\n\nUse multi-level scheduling algorithms"
+  },
+  {
+    "objectID": "day9.html#section",
+    "href": "day9.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day8.html#questions-to-consider-1",
-    "href": "day8.html#questions-to-consider-1",
+    "objectID": "day9.html#questions-to-consider-1",
+    "href": "day9.html#questions-to-consider-1",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow do FCFS, SJF, and SRTF compare in terms of tradeoffs between waiting time and response time?\nWhy does SJF require predicting future CPU bursts, and how can we estimate them?\nWhat is starvation in the context of scheduling, and how can we prevent it?"
+    "text": "Questions to consider\n\nWhat problem does MLFQ solve that MLQ does not, and what mechanism enables it?\nHow can a process game MLFQ’s original rules, and what rule change prevents it?\nHow does MLFQ handle starvation of long-running processes?"
   },
   {
-    "objectID": "day8.html#batch-scheduling-fcfs",
-    "href": "day8.html#batch-scheduling-fcfs",
+    "objectID": "day9.html#interactive-algorithms-multi-level-queue-mlq",
+    "href": "day9.html#interactive-algorithms-multi-level-queue-mlq",
     "title": "CSC 4553",
-    "section": "Batch scheduling: FCFS",
-    "text": "Batch scheduling: FCFS\n\n\n\nFirst-Come, First-Served (FCFS)\nNon-preemptive\nPros:\n\nEasy to understand, easy to implement\n\nCons?\n\nWaiting time & turnaround time have high variance\nExample: 1 long CPU-bound process and many I/O bound processes\n\nConvoy effect"
+    "section": "Interactive algorithms: Multi-Level Queue (MLQ)",
+    "text": "Interactive algorithms: Multi-Level Queue (MLQ)\n\nWe have classes of process, with different needs. Why not multiple schedulers satisfying those needs?\nMultilevel queue scheduler defined by the following parameters:\n\n# of queues\nScheduling algorithms for each queue\nMethod used to determine which queue a process will enter when that process needs service\nScheduling among the queues"
   },
   {
-    "objectID": "day8.html#fcfs-example",
-    "href": "day8.html#fcfs-example",
+    "objectID": "day9.html#mlq",
+    "href": "day9.html#mlq",
     "title": "CSC 4553",
-    "section": "FCFS example",
-    "text": "FCFS example\n\n\n\nCalculate the average waiting time:\nOrder: P1, P2, P3 \nWaiting time P1 = 0; P2 = 24; P3 = 27\nAverage waiting time: \\((0 + 24 + 27)/3 = 17\\)\nOrder P2, P3, P1 \nWaiting time P1 = 6; P2 = 0; P3 = 3\nAverage waiting time: \\((6 + 0 + 3)/3 = 3\\)\n\n\n\n\nProcess Burst Time\n  P1         24\n  P2          3\n  P3          3"
+    "section": "MLQ",
+    "text": "MLQ\n\n\n\nHow do we schedule this?\n\nStrict priority: low priority could starve\nTypical: time slice among queues (e.g., real-time get 50%, system gets 30%, interactive 15%, batch 5%)\nEach queue can implement a separate scheduling policy\n\nMLQ cons:\n\nStarvation\nInflexibility"
   },
   {
-    "objectID": "day8.html#okay-fcfs-can-be-bad",
-    "href": "day8.html#okay-fcfs-can-be-bad",
+    "objectID": "day9.html#interactive-algorithms-multi-level-feedback-queue-mlfq",
+    "href": "day9.html#interactive-algorithms-multi-level-feedback-queue-mlfq",
     "title": "CSC 4553",
-    "section": "Okay, FCFS can be bad",
-    "text": "Okay, FCFS can be bad\nCan we think of a better algorithm to deal with the reality that jobs run for different amounts of time?"
+    "section": "Interactive algorithms: Multi-Level Feedback Queue (MLFQ)",
+    "text": "Interactive algorithms: Multi-Level Feedback Queue (MLFQ)\n\nA process can move between the various queues (goal is to avoid starvation present in MLQ)\nMetrics for movement:\n\nProcess requirements (we serve fast processes quickly)\nOver consumption\nChange in priority\nAge"
   },
   {
-    "objectID": "day8.html#batch-scheduling-shortest-job-first-sjf",
-    "href": "day8.html#batch-scheduling-shortest-job-first-sjf",
+    "objectID": "day9.html#mlfq-rules",
+    "href": "day9.html#mlfq-rules",
     "title": "CSC 4553",
-    "section": "Batch scheduling: shortest job first (SJF)",
-    "text": "Batch scheduling: shortest job first (SJF)\n\n\n\nOrdered by length of the process’s next CPU burst\nNon-preemptive\nPros?\n\nOptimal average waiting time among non-preemptive algorithms\n\nCons?\n\nRequires knowing the future (potentially okay in some situations; examples?)\n\nScientific jobs, batch jobs\n\n\nQuestion: how do we know the length of the upcoming CPU burst?\n\nAsk the process? Estimate? How?"
+    "section": "MLFQ rules",
+    "text": "MLFQ rules\n\nRule 1: If Priority(A) &gt; Priority(B), A runs (B doesn’t)\nRule 2: If Priority(A)=Priority(B), A & B run in RR\nRule 3: When a job enters the system, it is placed at the highest priority (the topmost queue)\nRule 4a: If a job uses up its allotment while running, its priority is reduced (i.e., it moves down one queue)\nRule 4b: If a job gives up the CPU (for example, by performing an I/O operation) before the allotment is up, it stays at the same priority level (i.e., its allotment is reset)\nAny problems with these???"
   },
   {
-    "objectID": "day8.html#sjf-how-can-we-predict-the-future",
-    "href": "day8.html#sjf-how-can-we-predict-the-future",
+    "objectID": "day9.html#mlfq-example-one-process",
+    "href": "day9.html#mlfq-example-one-process",
     "title": "CSC 4553",
-    "section": "SJF: how can we predict the future?",
-    "text": "SJF: how can we predict the future?\n\nWe can’t trust a process to tell the truth\nWe can only estimate, how?\n\nThe past (with the hope that the process will act like it has before)\n\nExponential weighted moving average: \\[\nEWMA_t = \\alpha \\times x_t + (1 - \\alpha) \\times EWMA_{t-1}\n\\]\n\\(\\alpha = 0\\)? New measurement does not get taken into account\n\\(\\alpha = 1\\)? History does not get taken into account\n\\(\\alpha\\) is often set to .5"
+    "section": "MLFQ example: one process",
+    "text": "MLFQ example: one process"
   },
   {
-    "objectID": "day8.html#ewma-example",
-    "href": "day8.html#ewma-example",
+    "objectID": "day9.html#mlfq-example-two-processes",
+    "href": "day9.html#mlfq-example-two-processes",
     "title": "CSC 4553",
-    "section": "EWMA example",
-    "text": "EWMA example\n\\[\nEWMA_t = \\alpha \\times x_t + (1 - \\alpha) \\times EWMA_{t-1}\n\\]\n\nSuppose \\(\\alpha = 0.5\\) and a process has had burst times: 10, 6, 4, 6, …\n\\(EWMA_0 = 10\\)\n\\(EWMA_1 = 0.5 \\times 6 + 0.5 \\times 10 = 3 + 5 = 8\\)\n\\(EWMA_2 = 0.5 \\times 4 + 0.5 \\times 8 = 2 + 4 = 6\\)\n\\(EWMA_3 = 0.5 \\times 6 + 0.5 \\times 6 = 3 + 3 = 6\\)\nRecent values pull the estimate toward them, but history still matters"
+    "section": "MLFQ example: two processes",
+    "text": "MLFQ example: two processes\n\n\n\nScenario 1: Perfectly fine"
   },
   {
-    "objectID": "day8.html#sjf-example",
-    "href": "day8.html#sjf-example",
+    "objectID": "day9.html#mlfq-problem-with-gaming",
+    "href": "day9.html#mlfq-problem-with-gaming",
     "title": "CSC 4553",
-    "section": "SJF example",
-    "text": "SJF example\n\n\n\nGantt: \nAverage waiting time: \\((3 + 16 + 9 + 0)/4 = 7\\)\nVersus FCFS: \\((0 + 6 + 14 + 21)/4 = 10.25\\)\n\n\n\n\n    Process Burst Time\n      P1          6\n      P2          8\n      P3          7\n      P4          3"
+    "section": "MLFQ: problem with gaming",
+    "text": "MLFQ: problem with gaming\nRule 4b: If a job gives up the CPU before its allotment expires, it stays at the same priority level (allotment is reset).\nUsing only this rule, describe a strategy a malicious process could use to stay in the top-priority queue indefinitely.\nThen: what rule change would stop it?"
   },
   {
-    "objectID": "day8.html#do-you-see-any-problems-with-sjf",
-    "href": "day8.html#do-you-see-any-problems-with-sjf",
+    "objectID": "day9.html#mlfq-example-two-processes-1",
+    "href": "day9.html#mlfq-example-two-processes-1",
     "title": "CSC 4553",
-    "section": "Do you see any problems with SJF?",
-    "text": "Do you see any problems with SJF?\n\nWhat do we do if a short process arrives after SJF has started a long running process? \nWhat should we do?\n\nPreempt"
+    "section": "MLFQ example: two processes",
+    "text": "MLFQ example: two processes\n\n\n\nScenario 1: Perfectly fine\nScenario 2: programmer can game the algorithm to remain at high priority"
   },
   {
-    "objectID": "day8.html#shortest-remaining-time-first-srtf",
-    "href": "day8.html#shortest-remaining-time-first-srtf",
+    "objectID": "day9.html#mlfq-example-two-processes-2",
+    "href": "day9.html#mlfq-example-two-processes-2",
     "title": "CSC 4553",
-    "section": "Shortest remaining time first (SRTF)",
-    "text": "Shortest remaining time first (SRTF)\n\n\n\nPreemptive version of SJF\nWhenever a new process arrives in the ready queue, the decision on which process to schedule next is redone using the SJF algorithm\nQuestion: is SRTF more optimal than SJF for any metrics?\n\nYes, average waiting time is minimized"
+    "section": "MLFQ example: two processes",
+    "text": "MLFQ example: two processes\n\n\n\nScenario 1: Perfectly fine\nScenario 2: programmer can game the algorithm to remain at high priority\nScenario 3: multiple small processes can lead to starvation"
   },
   {
-    "objectID": "day8.html#srtf-example",
-    "href": "day8.html#srtf-example",
+    "objectID": "day9.html#mlfq-solving-gaming",
+    "href": "day9.html#mlfq-solving-gaming",
     "title": "CSC 4553",
-    "section": "SRTF example",
-    "text": "SRTF example\n    Process      Arrival Time   Burst Time\n     P1               0             8\n     P2               1             4\n     P3               2             9\n     P4               3             5\n\nAverage waiting time = \\([(0+9)+(0)+(15)+(2)]/4 = 26/4 = 6.5\\)"
+    "section": "MLFQ: solving gaming",
+    "text": "MLFQ: solving gaming\n\n\n\nRule 4 (new): Once a job uses up its time allotment at a given level (regardless of how many times it has given up the CPU), its priority is reduced (i.e., it moves down one queue)"
   },
   {
-    "objectID": "day8.html#do-you-see-any-problems-with-srtf",
-    "href": "day8.html#do-you-see-any-problems-with-srtf",
+    "objectID": "day9.html#mlfq-how-can-we-avoid-starvation",
+    "href": "day9.html#mlfq-how-can-we-avoid-starvation",
     "title": "CSC 4553",
-    "section": "Do you see any problems with SRTF?",
-    "text": "Do you see any problems with SRTF?\n\nComputers aren’t static. What if short jobs continuously arrive?\n\nLarge jobs can starve\nUrban legend about IBM 7074 at MIT: when shut down in 1973, low-priority processes were found which had been submitted in 1967 and had not yet been run…"
+    "section": "MLFQ: how can we avoid starvation?",
+    "text": "MLFQ: how can we avoid starvation?"
   },
   {
-    "objectID": "day8.html#priority-scheduling",
-    "href": "day8.html#priority-scheduling",
+    "objectID": "day9.html#mlfq-solving-starvation",
+    "href": "day9.html#mlfq-solving-starvation",
     "title": "CSC 4553",
-    "section": "Priority scheduling",
-    "text": "Priority scheduling\n\n“Shortest” algos are examples of priority scheduling\nI.e., scheduling is based on some metric of priority\nDownsides\n\nIf not implemented carefully, indefinite blocking / starvation\nHow do we prevent starvation?\n\nAging: gradually increase the priority of processes that wait in the system for a long time"
+    "section": "MLFQ: solving starvation",
+    "text": "MLFQ: solving starvation\n\n\n\nRule 5: After some time period, move all the jobs in the system to the topmost queue\n\nSolves starvation\nBonus: if a long running process evolves to be more interactive, it gets promoted"
   },
   {
-    "objectID": "day8.html#section-1",
-    "href": "day8.html#section-1",
+    "objectID": "day9.html#what-scheduler-should-we-use",
+    "href": "day9.html#what-scheduler-should-we-use",
+    "title": "CSC 4553",
+    "section": "What scheduler should we use?",
+    "text": "What scheduler should we use?\n\nTicket booking system\n\nFCFS: fairness\n\nPrint server\n\nSJF could make sense\n\nWeb server\n\nRR: fairness and short response time\n\nGeneral operating systems\n\nMLFQ: need to handle a mix"
+  },
+  {
+    "objectID": "day9.html#linux-scheduling",
+    "href": "day9.html#linux-scheduling",
+    "title": "CSC 4553",
+    "section": "Linux scheduling",
+    "text": "Linux scheduling\n\nCompletely Fair Scheduler (CFS)\nFair-share scheduling (see lottery and stride scheduling in the text if you want to learn more)\nBased on vruntime (how long any process has run): lowest vruntime runs next\nDivide sched_latency by # processes to determine a dynamic quantum (floor set by min_granularity)\n\nWhy do we need a floor?"
+  },
+  {
+    "objectID": "day9.html#linux-cfs",
+    "href": "day9.html#linux-cfs",
+    "title": "CSC 4553",
+    "section": "Linux CFS",
+    "text": "Linux CFS\n\nRed-Black tree includes only running (or ready) processes\nBalanced such that operations are \\(O(log n)\\)\nVery straightforward to find the next job (smallest vruntime) to run\nSleeper fairness: processes waiting on I/O are given “credit” for their wait time\nPeople are actively working on new features"
+  },
+  {
+    "objectID": "day9.html#controlling-priority-nice",
+    "href": "day9.html#controlling-priority-nice",
+    "title": "CSC 4553",
+    "section": "Controlling priority: nice",
+    "text": "Controlling priority: nice\n\nLinux lets users influence CFS priority via nice values: \\([-20, 19]\\)\n\nLower = higher priority (more CPU weight), default = 0\n\nCFS scales vruntime accumulation by weight: high-nice processes accumulate vruntime faster, so they run less\nExamples:\n\nnice -n 19 ./video_encoder — run encoder at lowest priority, keeps system responsive\nsudo nice -n -10 ./realtime_daemon — boost a daemon (requires root for negative values)\n\nTry it: top shows NI column; renice adjusts a running process"
+  },
+  {
+    "objectID": "day9.html#section-1",
+    "href": "day9.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
