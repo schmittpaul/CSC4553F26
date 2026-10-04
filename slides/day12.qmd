@@ -1,0 +1,593 @@
+---
+title: CSC 4553
+subtitle: Fall 2026 - Day 12
+format:
+  clean-revealjs:
+    self-contained: true
+    incremental: false
+    margin: 0.15
+---
+
+## Admin
+:::{.nonincremental}
+- Programming assignment 2 due Monday 10/12, 18:00
+:::
+
+# Synchronization {background-color="#40666e"}
+
+## Questions to consider
+:::{.nonincremental}
+- What are the requirements for a critical section synchronization solution?
+- Why do naive implementations like a simple boolean lock fail, and what must happen atomically instead?
+- What are the practical limitations of Peterson's solution, and why don't they work well on modern architectures?
+:::
+
+## Problem
+- Two processes accessing a reservation system, where the number of open seats is tracked by a counter
+  - A: Releasing Seat
+  - B: Reserving Seat
+- Counter at 10; Process A `counter++ = 11;` Process B `counter-- = 9;`
+- What could go wrong?
+  ```{.c}
+  mov 0x8049a1c, %eax
+  add $0x1, %eax
+  mov %eax, 0x8049a1c
+
+  mov 0x8049a1c, %eax
+  sub $0x1, %eax
+  mov %eax, 0x8049a1c
+  ```
+
+## Race conditions
+- If interleaved, whoever goes last wins. Either way, 11 or 9 is an incorrect value. This is a [race condition]{.alert}
+- Very common in multi-programming environments: allocating disk blocks or memory pages, writing to a file, network buffers, etc.
+- How can we solve race conditions?
+  - [Mutual Exclusion]{.alert} (one at a time) on [Critical Sections]{.alert} (the contention data/code)
+
+## Challenges we face
+- How large should a critical section be?
+- How long can a process be in a critical section
+  - What happens if they crash while within a critical section?
+- How do we implement? Who enforces entrance into critical sections?
+
+## Beware naïve implementations
+- Why not use a simple bool?
+  ```{.c}
+  bool lock = FALSE
+  do {
+    while (lock == TRUE);
+    lock = TRUE;
+    //CRITICAL SECTION
+    lock = FALSE;
+  }while(TRUE);
+  ```
+
+- This implementation requires TWO operations: a read (test) and a write (set) that must be atomic
+
+## Critical section solution requirements
+- [Mutual exclusion]{.alert}: only one process can execute at a time
+- [Progress]{.alert}: if no process is executing in its critical section and there exist some processes that wish to enter their critical section, then the selection of the process that will enter the critical section next cannot be postponed indefinitely
+  - E.g., a process in its remainder section (not contending) cannot block another process from entering
+- [Bounded waiting]{.alert}: there must be a bound on the number of times other processes are allowed to enter their critical sections after a process has requested entry and before that request is granted
+  - E.g., a process cannot immediately re-enter the critical section if another process wants to
+  - No assumptions on the speed or number of CPUs
+
+## Requirement 1: Mutual exclusion
+:::: {.columns}
+::: {.column width="55%"}
+- [Safety]{.alert} property: *nothing bad ever happens*
+  - At most one process in the CS at any instant, under **every** possible interleaving
+- To show it's violated: find **one** interleaving that puts two processes in the CS
+- To show it holds: argue that *no* interleaving can (one lucky run proves nothing)
+- The naïve `bool` lock fails: both processes can read `lock == FALSE` before either one sets it
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="43%"}
+| Step | $P_0$ | $P_1$ | `lock` |
+|:-:|:--|:--|:-:|
+| 1 | `while (lock)` → exits | | F |
+| 2 | *context switch* | `while (lock)` → exits | F |
+| 3 | | `lock = TRUE` | T |
+| 4 | | **in CS** | T |
+| 5 | `lock = TRUE` | | T |
+| 6 | **in CS** | **in CS** | T |
+:::
+::::
+
+::: {.notes}
+- The gap between the test (step 1) and the set (step 5) is the whole problem. Atomicity would close it.
+- Stress the asymmetry: one bad interleaving disproves ME. Proving it takes a reasoning argument over all interleavings, which we'll do for Peterson's.
+- Calling it a "safety" property sets up the contrast with Progress and Bounded Waiting, which are about "something good eventually happens" (liveness).
+- Trivial solution that satisfies ME: never let anyone in. That's why ME alone isn't enough. Segue to Progress.
+:::
+
+## Requirement 2: Progress
+- [Liveness]{.alert} property for the *system*: if the CS is empty and someone wants in, **someone** gets in
+- Two parts to the rule:
+  - Only processes **trying to enter** may take part in deciding who goes next. A process in its remainder section can't block anyone
+  - The decision has to happen in finite time. The contenders can't wait on each other forever
+- Test for a violation: Is the CS empty? Is someone trying to get in? Are they stuck anyway?
+  - Three yeses means Progress is violated
+
+::: {.notes}
+- Mutual exclusion alone is easy: never let anyone in. Progress is what rules that out.
+- The "finite time" part rules out schemes where the contenders keep deferring to each other forever. Don't expand on it here: it's the answer to the upcoming discussion.
+:::
+
+## Progress example: strict alternation
+:::: {.columns}
+::: {.column width="50%"}
+```{.c}
+// shared: int turn = 0;
+// P_i's code (j is the other)
+do {
+  while (turn != i);
+  //CRITICAL SECTION
+  turn = j;
+  //REMAINDER
+} while (TRUE);
+```
+- Mutual exclusion ✓: `turn` can't be `0` and `1` at once
+- Progress ✗: see the trace
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="48%"}
+| Step | $P_0$ | $P_1$ | `turn` |
+|:-:|:--|:--|:-:|
+| 1 | in CS | in remainder | 0 |
+| 2 | `turn = 1` | in remainder | 1 |
+| 3 | wants in again | in remainder | 1 |
+| 4 | stuck in `while` | in remainder | 1 |
+
+- CS empty ✓, $P_0$ wants in ✓, $P_0$ stuck ✓
+:::
+::::
+
+::: {.notes}
+- P1 isn't contending, but it holds the "key" (turn == 1), so it blocks P0 from its remainder section. That's the first part of the rule.
+- Strict alternation forces the pattern P0, P1, P0, P1... A process that's faster or needs the CS more often gets held back by one that isn't even contending.
+- Keep `turn` in mind. Peterson's reuses it, but only as a tie-breaker when **both** want in.
+:::
+
+## Requirement 3: Bounded waiting
+- [Liveness]{.alert} property for *each process*: once $P_i$ asks to enter, only a bounded number $k$ of other entries can happen before $P_i$ gets its turn
+  - Progress says *someone* gets in. Bounded waiting says *you* eventually get in
+  - The bound is a **count of entries**, not a time. We can't assume anything about CPU speed
+- Violating it means [starvation]{.alert}
+- Fix idea: take a number (FIFO), like a deli counter. Then $k = n - 1$
+
+::: {.notes}
+- Deli counter: without tickets, whoever pushes hardest gets served, and a polite customer can wait forever even though the counter is always busy.
+- For two processes the best possible bound is k = 1: once I'm waiting, you get in at most once more before I do. We'll show Peterson's achieves this.
+:::
+
+## Bounded waiting example: $P_0$ always wins
+:::: {.columns}
+::: {.column width="50%"}
+- Suppose a lock (whatever its implementation) always lets $P_0$ win a tie
+- Mutual exclusion ✓
+- Progress ✓: the CS is never idle while someone waits
+- Bounded waiting ✗: $P_1$ can lose every time
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="48%"}
+| Time | $P_0$ | $P_1$ |
+|:-:|:--|:--|
+| 1 | in CS | requests entry |
+| 2 | exits, re-requests | waiting |
+| 3 | **wins tie**, in CS | waiting |
+| 4 | exits, re-requests | waiting |
+| 5 | **wins tie**, in CS | waiting |
+| ... | ... | waiting forever |
+:::
+::::
+
+::: {.notes}
+- Ask: does this violate Progress? No. The CS is in use the whole time, so the *system* is making progress. Only P1 isn't. That's the difference between the two requirements.
+- Preview: the plain test_and_set spinlock later today has this exact problem. Let students find it themselves on that slide.
+:::
+
+## Discussion: Break this lock
+:::{.nonincremental}
+- **Think** (1 min), **pair** (2 min), **share** (2 min)
+- This is $P_i$'s code (swap `i` and `j` for $P_j$). Which of the three requirements does it **meet**, and which does it **violate**? Give a concrete interleaving that breaks it.
+- Done early? How would you fix it?
+:::
+
+```{.c}
+// shared: bool flag[2] = {FALSE, FALSE};
+do {
+  flag[i] = TRUE;
+  while (flag[j]);
+  //CRITICAL SECTION
+  flag[i] = FALSE;
+  //REMAINDER
+} while (TRUE);
+```
+::: {.notes}
+- **Mutual exclusion holds:** to be in the CS, $P_i$ must have seen `flag[j] == FALSE` *after* setting its own flag, so both can't get in.
+- **Progress fails (deadlock):** $P_i$ sets `flag[i] = TRUE`, context switch, $P_j$ sets `flag[j] = TRUE`. Now both spin forever on `while (flag[other])` and nobody is in the CS.
+- **Bounded waiting** is moot once it deadlocks.
+- If someone says it violates mutual exclusion: have them try to build the interleaving. Setting the flag *before* testing is what saves it. Contrast with the naive bool lock, which tests before setting.
+
+**Bridge to Peterson's:** the flags say "I want in" but nobody ever yields. Peterson's keeps `flag` for intent and adds `turn` as a tie-breaker when both want in.
+:::
+
+## Peterson's solution
+- Two processes: $P_i$ and $P_j$
+- Two shared data items: `int turn; bool flag[2];`
+  ```{.c}
+  Pis code:
+  do {
+    flag[i] = TRUE;                // I want to enter critical section
+    turn = j;                      // let Pj go first if it wants
+    while (flag[j] && turn == j);  // busy wait
+    //CRITICAL SECTION
+    flag[i] = FALSE;               // Im leaving critical section
+    //REMAINDER
+  }while(TRUE);
+  ```
+  - turn indicates whose turn it is: `turn == i` → $P_i$'s turn
+  - if `flag[i] == true` → $P_i$ is ready for the critical section
+- To enter: $P_i$ sets `flag[i] = true` and `turn = j`
+  - i.e., $P_i$ demurs to $P_j$; if they are both ready turn will get set to?
+    - Whomever runs last sets the turn to the other process
+
+## Peterson's solution (cont'd)
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+- Does this meet the three solution requirements?
+- Mutual exclusion: under what conditions can a process be in the critical section?
+  - $P_i$ only enters if `flag[j]` is false or `turn == i`
+  - Conversely, if $P_i$ and $P_j$ are in the CS, then `flag[i] == flag[j]`; this implies both $P_i$ and $P_j$ terminated their whiles at the same time; BUT, in order for this to be true, turn must be both 0 and 1 (Contradiction)
+
+## Peterson's solution (cont'd)
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+- Progress: Is there a condition where $P_i$ can't enter the CS?
+  - There is no condition under which $P_i$ cannot (eventually) enter the CS; either the other process will set `turn == i` or it is already set
+- Bounded Waiting: How long will $P_i$ wait in the best/worst case?
+  - $P_i$ will enter after *at most* one entry by $P_j$
+
+## Peterson's solution (cont'd)
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+- Do you see any issues with this solution?
+  - Limitation: Only works for two processes
+  - Modern architectures may also break this solution
+    - Processors and/or compilers can reorder reads and writes that have no dependencies
+    - Multithreaded applications could lead to issues
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
+# Primitives {background-color="#40666e"}
+## Questions to consider
+:::{.nonincremental}
+- How do synchronization solutions compare in implementation / function?
+- Why can busy-waiting primitives cause problems like priority inversion, and how do blocking primitives help address this?
+- When would you choose a counting semaphore versus a binary semaphore or mutex, and what distinguishes them?
+:::
+
+## Hardware solutions: atomicity
+- One way: use atomic instructions (all-or-none actions)
+- Baked into modern hardware
+  - `test_and_set()`
+  - `compare_and_swap()`
+  - These both lock the memory bus (lighter weight than the olden days when we could alternatively disable interrupts)
+    - Disabling interrupts only really works on a single CPU, modern architectures make it untenable
+- Easy enough for simple operations
+- Not realistic for complex operations
+  - Ex. "atomic update of a B-tree": do we really want to bake such an instruction into the hardware? No
+
+## Does this solution meet the requirements?
+```{.c}
+bool test_and_set(bool *lock){
+  bool ret = *lock;
+  *lock = TRUE;
+  return ret;
+}
+
+lock = FALSE;
+do{
+  while(test_and_set(&lock));
+  // CRITICAL SECTION
+  lock = FALSE;
+}while(true)
+```
+- Mutual exclusion?
+  - Yes
+- Progress?
+  - Yes: when the lock is released, a waiting process will acquire it
+- Bounded waiting?
+  - No: an unlucky process could be endlessly passed over based on the scheduler's decisions
+
+## Mutex locks
+- Previous solutions are complicated and generally not used by application programmers 
+- Any solution to the critical section problem requires a lock
+  - Peterson's solution is an example (in software)
+  - `test_and_set()` / `compare_and_swap()` are hardware implementations
+- Simplest commonly used solution is [mutex]{.alert} lock
+  - Boolean variable indicating if lock is available or not
+
+## Mutex locks (cont'd)
+- Protect a critical section  by
+  - First `acquire()` a lock
+  - Then `release()` the lock
+- What's going on under the hood?
+  ```{.c}
+  void lock(lock_t *lock) {
+    while (test_and_set(&lock->flag, 1) == 1)
+    ; // spin-wait (do nothing)
+  }
+  ```
+  - `test_and_set()` or `compare_and_swap()`
+
+## Mutex locks (cont'd)
+- Calls to `acquire()` and `release()` must be [atomic]{.alert}
+- But this solution requires **busy waiting**
+  - This type of mutex is therefore often called a [spinlock]{.alert}
+- There are also mutex implementations (e.g., futex) that block to avoid busy-waiting, and some that do both
+- **Note**: mutexes are owned by the thread that locks them. *Only the thread that acquired the mutex can release it*
+
+## Spin or block?
+:::{.nonincremental}
+For each scenario, would you use a **spinlock** or a **blocking** mutex? Why?
+
+- (a) A kernel data structure protected by a lock held for ~50 CPU cycles
+- (b) A user-space cache entry lock held for ~100 µs while computing a result
+- (c) A file lock held for several seconds while the file is being edited
+- (d) A lock on a single-CPU system where only one thread can run at a time
+:::
+::: {.notes}
+Rule of thumb: **spin if the expected wait is shorter than ~2 context switches** (a context switch is roughly 1–10 µs depending on the system). Otherwise block.
+
+- (a) **Spin.** 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.
+- (b) **Block.** 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.
+- (c) **Block** (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.
+- (d) **Never spin.** On a uniprocessor, the lock holder cannot make progress while you're spinning — you're burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.
+
+Key insight: the break-even isn't about the lock, it's about the **expected hold time** relative to the cost of a context switch. Real systems often use **adaptive mutexes** that spin briefly, then block if the lock isn't acquired quickly.
+:::
+
+## Futex: best of both worlds
+- Real systems don't want to *choose* between spin and block — they want both
+- [Futex]{.alert} (**F**ast **U**serspace mu**TEX**, Linux 2002) makes that possible
+- Key idea: most lock acquisitions are **uncontended**
+  - Put the lock variable in **user-space memory**
+  - Try to grab it with a single atomic instruction (e.g., `cmpxchg`)
+  - If you win → done. No syscall, no kernel involvement (~10 ns)
+- Only on **contention** do you call into the kernel via the `futex()` syscall
+  - Kernel adds you to a wait queue and puts you to sleep
+  - Releaser, if there are waiters, calls `futex()` to wake one up
+
+## Futex (cont'd)
+- Pays the cost of a syscall **only on contention** — uncontended path is pure user-space atomics
+- This is why `pthread_mutex_t` on Linux is cheap when uncontended — it's built on futexes
+- Same story for `std::mutex` in C++ and most modern language runtimes
+- Question: why can't you build a *blocking* mutex purely in user space?
+  - Blocking — taking a thread off the run queue — is a kernel operation by definition
+  - Only the kernel can decide which thread runs on a CPU
+  - Futex is the **minimum-syscall** way to ask the kernel for that service
+
+## Hidden costs of locking
+In 1997, NASA's Mars Pathfinder started having mysterious resets on Mars. From Earth, engineers saw the system repeatedly rebooting for no obvious reason. Not ideal when your computer is 250 million km away.
+
+The cause turned out to be [priority inversion]{.alert} in the operating system.
+
+- What was happening:
+  - A low-priority task was holding a shared resource (a mutex).
+	- A high-priority task needed that resource and blocked, waiting.
+	- Meanwhile, a medium-priority task—which didn't need the resource at all—kept preempting the low-priority task.
+	- Result: the low-priority task never got CPU time to release the resource, so the high-priority task was effectively starved.
+
+- The system interpreted this long delay as a fault and triggered a watchdog reset. Over and over.
+
+## Priority inversion
+- Any ideas on how to fix?
+  - [Priority inheritance]{.alert}: low priority processes are temporarily given priorities that match those waiting on them
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
+## Semaphores
+:::: {.columns}
+::: {.column width="68%" .nonincremental}
+- Synchronization tool that provides more sophisticated ways (than mutex locks)  for processes to synchronize their activities
+- Semaphore `S`: integer variable
+- Can only be accessed via two atomic operations
+  - `wait()` and `signal()`
+    - Originally called `P()` and `V()` (because, Dutch - another Dijkstra invention)
+- Do not have ownership, any thread can signal (increment) or wait (decrement)
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="30%"}
+```{.c}
+wait(S) {
+    while (S <= 0)
+       ; // busy
+    S--;
+}
+
+signal(S) {
+    S++;
+}
+```
+:::
+::::
+
+## Semaphores (cont'd)
+:::: {.columns}
+::: {.column width="68%" .nonincremental}
+- [Binary semaphore]{.alert}: integer value can range only between 0 and 1
+  - Functionally similar to a mutex, but without ownership — any thread can signal it (often when people call something a mutex it's actually a binary semaphore)
+
+
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="30%"}
+```{.c}
+do{
+  wait(mutex);
+  //CS
+  signal(mutex);
+}while(TRUE);
+```
+:::
+::::
+- [Counting semaphore]{.alert}: integer value can range over an unrestricted domain
+  - When would this make sense?
+    - Protect a finite set of resources rather than a single one (e.g., you have a pool of db connections that can be shared by processes)
+    - Initialize `S` to the number of resources
+    - Decrement `S` each time someone grabs a resource, increment when they release
+
+## Semaphores (cont'd)
+:::: {.columns}
+::: {.column width="68%" .nonincremental}
+- Can also be used to force synchronization
+- Consider $P_1$  and $P_2$ that with two statements $S_1$ and $S_2$ and the requirement that $S_1$ to happen before $S_2$
+
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="30%"}
+```{.c}
+P1:
+   S1;
+   signal(sync);
+P2:
+   wait(sync);
+   S2;
+```
+:::
+::::
+
+## Blocking semaphores
+:::: {.columns}
+::: {.column width="58%" .nonincremental}
+- We add `sleep()` and `wakeup()` to the underlying implementation
+- Call to wait, and semaphore not available, process is blocked with `sleep()` (wait state) and placed on a waiting queue
+- Blocked processes are notified of an available semaphore by the `wakeup()` operation
+  - goes from waiting to ready
+  - Able to achieve bounded wait and progress with FIFO queue
+
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="40%"}
+```{.c}
+wait(semaphore *S) {
+   S->value--;
+   if (S->value < 0) {
+      add process to S->list;
+      sleep();
+   }
+}
+
+signal(semaphore *S) {
+   S->value++;
+   if (S->value <= 0) {
+      remove P from S->list;
+      wakeup(P);
+   }
+}
+
+```
+:::
+::::
+
+## Mutexes vs. semaphores
+- Mutexes are generally lighter weight / faster
+- Semaphores can support multiple instances
+- Semaphores don't have the ownership limitations
+
+## Choose your primitive
+- For each, choose between: atomic instructions; futexes; spin lock mutexes; semaphores
+- Scenario 1: You need to protect a critical section where only one thread should execute at a time, and the critical section is expected to be held for a relatively long duration.
+  - Futex
+- Scenario 2: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.
+  - Counting semaphore
+
+## Choose your primitive (cont'd)
+- For each, choose between: atomic instructions; futexes; spin lock mutexes; semaphores
+- Scenario 3: You need to increment a shared counter frequently, and the operation is very quick.
+  - Atomic instruction
+- Scenario 4: You need to protect a critical section where only one thread should execute at a time, but the critical section is expected to be held for a very short duration.
+  - Spin lock mutex
+
+## Beware: mistakes are easy to make
+-  Incorrect use of semaphore operations
+    - wrong order: `signal(mutex)` ...  `wait(mutex)`
+    - repeating: `wait(mutex)`  ...  `wait(mutex)`
+    - Omitting of `wait(mutex)` and/or `signal(mutex)`
+- Be careful
+
+## Condition variables
+- Paired with a mutex to let threads wait for a condition rather than spin
+- `x.wait()`: calling thread releases the mutex and suspends until signaled
+- `x.signal()`: wakes one waiter (if any); no effect if no waiters
+- `x.broadcast()`: wake *all* waiters — useful when multiple threads may now be able to proceed
+- Good fit for producer-consumer and any case where threads must sleep until a resource / condition is ready
+
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
