@@ -1162,17 +1162,7 @@ margin-right: 0; }
 <ul>
 <li class="fragment"><span class="alert">Mutual exclusion</span></li>
 <li class="fragment"><span class="alert">Progress</span></li>
-<li class="fragment"><span class="alert">Bounded waiting</span> &lt;!– ## Critical section solution requirements</li>
-<li class="fragment"><span class="alert">Mutual exclusion</span>: only one process can execute at a time</li>
-<li class="fragment"><span class="alert">Progress</span>: if no process is executing in its critical section and there exist some processes that wish to enter their critical section, then the selection of the process that will enter the critical section next cannot be postponed indefinitely
-<ul>
-<li class="fragment">E.g., a process in its remainder section (not contending) cannot block another process from entering</li>
-</ul></li>
-<li class="fragment"><span class="alert">Bounded waiting</span>: there must be a bound on the number of times other processes are allowed to enter their critical sections after a process has requested entry and before that request is granted
-<ul>
-<li class="fragment">E.g., a process cannot immediately re-enter the critical section if another process wants to</li>
-<li class="fragment">No assumptions on the speed or number of CPUs –&gt;</li>
-</ul></li>
+<li class="fragment"><span class="alert">Bounded waiting</span></li>
 </ul>
 </section>
 <section id="requirement-1-mutual-exclusion" class="slide level2">

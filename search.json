@@ -46,7 +46,7 @@
     "href": "day12.html#critical-section-solution-requirements",
     "title": "CSC 4553",
     "section": "Critical section solution requirements",
-    "text": "Critical section solution requirements\n\nMutual exclusion\nProgress\nBounded waiting &lt;!– ## Critical section solution requirements\nMutual exclusion: only one process can execute at a time\nProgress: if no process is executing in its critical section and there exist some processes that wish to enter their critical section, then the selection of the process that will enter the critical section next cannot be postponed indefinitely\n\nE.g., a process in its remainder section (not contending) cannot block another process from entering\n\nBounded waiting: there must be a bound on the number of times other processes are allowed to enter their critical sections after a process has requested entry and before that request is granted\n\nE.g., a process cannot immediately re-enter the critical section if another process wants to\nNo assumptions on the speed or number of CPUs –&gt;"
+    "text": "Critical section solution requirements\n\nMutual exclusion\nProgress\nBounded waiting"
   },
   {
     "objectID": "day12.html#requirement-1-mutual-exclusion",
