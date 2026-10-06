@@ -30,7 +30,7 @@ format:
   - B: Reserving Seat
 - Counter at 10; Process A `counter++ (10 -> 11);` Process B `counter-- (10 -> 9);`
 - What could go wrong?
-  ```{.c}
+  ```{.gnuassembler}
   mov 0x8049a1c, %eax
   add $0x1, %eax
   mov %eax, 0x8049a1c
@@ -55,7 +55,7 @@ format:
 ## Beware naïve implementations
 - Why not use a simple bool?
   ```{.c}
-  bool lock = FALSE
+  bool lock = FALSE;
   do {
     while (lock == TRUE);
     lock = TRUE;
@@ -260,13 +260,13 @@ do {
 - Two processes: $P_i$ and $P_j$
 - Two shared data items: `int turn; bool flag[2];`
   ```{.c}
-  Pis code:
+  // P_i's code (j is the other)
   do {
     flag[i] = TRUE;                // I want to enter critical section
     turn = j;                      // let Pj go first if it wants
     while (flag[j] && turn == j);  // busy wait
     //CRITICAL SECTION
-    flag[i] = FALSE;               // Im leaving critical section
+    flag[i] = FALSE;               // I'm leaving critical section
     //REMAINDER
   }while(TRUE);
   ```
@@ -279,13 +279,13 @@ do {
 ## Peterson's solution: mutual exclusion
 ::: {style="font-size: 0.75em"}
 ```{.c}
-Pis code:
+// P_i's code (j is the other)
 do {
   flag[i] = TRUE;                // I want to enter critical section
   turn = j;                      // let Pj go first if it wants
   while (flag[j] && turn == j);  // busy wait
   //CRITICAL SECTION
-  flag[i] = FALSE;               // Im leaving critical section
+  flag[i] = FALSE;               // I'm leaving critical section
   //REMAINDER
 }while(TRUE);
 ```
@@ -313,13 +313,13 @@ Swap the order of steps 3 and 4 and P1 enters instead. Either way exactly one ge
 ## Peterson's solution: progress
 ::: {style="font-size: 0.75em"}
 ```{.c}
-Pis code:
+// P_i's code (j is the other)
 do {
   flag[i] = TRUE;                // I want to enter critical section
   turn = j;                      // let Pj go first if it wants
   while (flag[j] && turn == j);  // busy wait
   //CRITICAL SECTION
-  flag[i] = FALSE;               // Im leaving critical section
+  flag[i] = FALSE;               // I'm leaving critical section
   //REMAINDER
 }while(TRUE);
 ```
@@ -331,13 +331,13 @@ do {
 ## Peterson's solution: bounded waiting
 ::: {style="font-size: 0.75em"}
 ```{.c}
-Pis code:
+// P_i's code (j is the other)
 do {
   flag[i] = TRUE;                // I want to enter critical section
   turn = j;                      // let Pj go first if it wants
   while (flag[j] && turn == j);  // busy wait
   //CRITICAL SECTION
-  flag[i] = FALSE;               // Im leaving critical section
+  flag[i] = FALSE;               // I'm leaving critical section
   //REMAINDER
 }while(TRUE);
 ```
@@ -354,13 +354,13 @@ do {
 
 ## Peterson's solution (cont'd)
 ```{.c}
-Pis code:
+// P_i's code (j is the other)
 do {
   flag[i] = TRUE;                // I want to enter critical section
   turn = j;                      // let Pj go first if it wants
   while (flag[j] && turn == j);  // busy wait
   //CRITICAL SECTION
-  flag[i] = FALSE;               // Im leaving critical section
+  flag[i] = FALSE;               // I'm leaving critical section
   //REMAINDER
 }while(TRUE);
 ```
