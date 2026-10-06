@@ -70,13 +70,7 @@ format:
 - [Mutual exclusion]{.alert}
 - [Progress]{.alert}
 - [Bounded waiting]{.alert}
-<!-- ## Critical section solution requirements
-- [Mutual exclusion]{.alert}: only one process can execute at a time
-- [Progress]{.alert}: if no process is executing in its critical section and there exist some processes that wish to enter their critical section, then the selection of the process that will enter the critical section next cannot be postponed indefinitely
-  - E.g., a process in its remainder section (not contending) cannot block another process from entering
-- [Bounded waiting]{.alert}: there must be a bound on the number of times other processes are allowed to enter their critical sections after a process has requested entry and before that request is granted
-  - E.g., a process cannot immediately re-enter the critical section if another process wants to
-  - No assumptions on the speed or number of CPUs -->
+
 
 ## Requirement 1: Mutual exclusion
 :::: {.columns}
