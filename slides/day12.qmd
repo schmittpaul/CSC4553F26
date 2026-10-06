@@ -1,0 +1,384 @@
+---
+title: CSC 4553
+subtitle: Fall 2026 - Day 12
+format:
+  clean-revealjs:
+    self-contained: true
+    incremental: true
+    margin: 0.15
+---
+
+## Admin
+:::{.nonincremental}
+- Programming assignment 2 (schedfit) due Monday, 18:00
+- Lab due Friday, 18:00
+- Quiz due Monday, 18:00
+:::
+
+# Synchronization {background-color="#40666e"}
+
+## Questions to consider
+:::{.nonincremental}
+- What are the requirements for a critical section synchronization solution, and how do bounded waiting and progress differ?
+- Why do naive implementations like a simple boolean lock fail, and what must happen atomically instead?
+- What are the practical limitations of Peterson's solution, and why don't they work well on modern architectures?
+:::
+
+## Problem
+- Two processes accessing a reservation system, where the number of open seats is tracked by a counter
+  - A: Releasing Seat
+  - B: Reserving Seat
+- Counter at 10; Process A `counter++ (10 -> 11);` Process B `counter-- (10 -> 9);`
+- What could go wrong?
+  ```{.c}
+  mov 0x8049a1c, %eax
+  add $0x1, %eax
+  mov %eax, 0x8049a1c
+
+  mov 0x8049a1c, %eax
+  sub $0x1, %eax
+  mov %eax, 0x8049a1c
+  ```
+
+## Race conditions
+- If interleaved, whoever goes last wins. Either way, 11 or 9 is an incorrect value. This is a [race condition]{.alert}
+- Very common in multi-programming environments: allocating disk blocks or memory pages, writing to a file, network buffers, etc.
+- How can we solve race conditions?
+  - [Mutual Exclusion]{.alert} (one at a time) on [Critical Sections]{.alert} (the contention data/code)
+
+## Challenges we face
+- How large should a critical section be?
+- How long can a process be in a critical section
+  - What happens if they crash while within a critical section?
+- How do we implement? Who enforces entrance into critical sections?
+
+## Beware naïve implementations
+- Why not use a simple bool?
+  ```{.c}
+  bool lock = FALSE
+  do {
+    while (lock == TRUE);
+    lock = TRUE;
+    //CRITICAL SECTION
+    lock = FALSE;
+  }while(TRUE);
+  ```
+
+- This implementation requires TWO operations: a read (test) and a write (set) that must be atomic
+
+## Critical section solution requirements
+- [Mutual exclusion]{.alert}
+- [Progress]{.alert}
+- [Bounded waiting]{.alert}
+<!-- ## Critical section solution requirements
+- [Mutual exclusion]{.alert}: only one process can execute at a time
+- [Progress]{.alert}: if no process is executing in its critical section and there exist some processes that wish to enter their critical section, then the selection of the process that will enter the critical section next cannot be postponed indefinitely
+  - E.g., a process in its remainder section (not contending) cannot block another process from entering
+- [Bounded waiting]{.alert}: there must be a bound on the number of times other processes are allowed to enter their critical sections after a process has requested entry and before that request is granted
+  - E.g., a process cannot immediately re-enter the critical section if another process wants to
+  - No assumptions on the speed or number of CPUs -->
+
+## Requirement 1: Mutual exclusion
+:::: {.columns}
+::: {.column width="55%" .smaller}
+- [Safety]{.alert} property for the *system*::At most one process in the CS at any instant
+- Traffic light: cross streets are **never** green at the same time. One double green, even for an instant, breaks it
+- To show it's violated: find **one** interleaving that puts two processes in the CS
+- To show it holds: argue that *no* interleaving can (one lucky run proves nothing)
+- The naïve `bool` lock fails: both processes can read `lock == FALSE` before either one sets it
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="43%"}
+| Step | $P_0$ | $P_1$ | `lock` |
+|:-:|:--|:--|:-:|
+| 1 | reads `lock`: F, leaves `while` | | F |
+| 2 | *preempted* | reads `lock`: F, leaves `while` | F |
+| 3 | | `lock = TRUE`, enters CS | T |
+| 4 | *resumes*: `lock = TRUE` (no re-check) | in CS | T |
+| 5 | enters CS | in CS | T |
+
+**Both in the CS.**
+:::
+::::
+
+::: {.notes}
+- Same race as the `counter++` example at the start: read, get preempted, write based on what you read earlier.
+- The gap between the test (step 1) and the set (step 4) is the whole problem. Atomicity would close it.
+- At step 4, `lock` is already TRUE, so writing TRUE changes nothing. P0 never looks again; it already passed the test.
+- Stress the asymmetry: one bad interleaving disproves ME. Proving it takes a reasoning argument over all interleavings, which we'll do for Peterson's.
+- Calling it a "safety" property sets up the contrast with Progress and Bounded Waiting, which are about "something good eventually happens" (liveness).
+- Trivial solution that satisfies ME: never let anyone in. That's why ME alone isn't enough. Segue to Progress.
+- Traffic light version: a light stuck red in every direction never shows two greens. Perfectly safe, totally useless.
+:::
+
+## Requirement 2: Progress
+- [Liveness]{.alert} property for the *system*: if the CS is empty and someone wants in, **someone** gets in
+  - Traffic light: if the intersection is empty and a car is waiting, **some** direction eventually gets a green. The all-red light fails this
+- Two parts to the rule:
+  - A process that **isn't trying to enter** can't keep anyone else out
+  - If several processes are trying to enter, one of them gets in. They can't all wait on each other forever
+- Test for a violation: Is the CS empty? Is someone trying to get in? Are they stuck anyway?
+  - Three yeses means Progress is violated
+
+::: {.notes}
+- Mutual exclusion alone is easy: never let anyone in. Progress is what rules that out.
+- The "finite time" part rules out schemes where the contenders keep deferring to each other forever. Don't expand on it here: it's the answer to the upcoming discussion.
+:::
+
+## Progress example: strict alternation
+:::: {.columns}
+::: {.column width="50%"}
+```{.c}
+// shared: int turn = 0;
+// P_i's code (j is the other)
+do {
+  while (turn != i);
+  //CRITICAL SECTION
+  turn = j;
+  //REMAINDER
+} while (TRUE);
+```
+- Mutual exclusion ✓: `turn` can't be `0` and `1` at once
+- CS empty ✓, $P_0$ wants in ✓, $P_0$ stuck ✓
+- Progress ✗
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="48%"}
+| Step | $P_0$ | $P_1$ | `turn` |
+|:-:|:--|:--|:-:|
+| 1 | in CS | in remainder | 0 |
+| 2 | `turn = 1` | in remainder | 1 |
+| 3 | wants in again | in remainder | 1 |
+| 4 | stuck in `while` | in remainder | 1 |
+
+:::
+::::
+
+::: {.notes}
+- P1 isn't contending, but it holds the "key" (turn == 1), so it blocks P0 from its remainder section. That's the first part of the rule.
+- Traffic light version: a light that won't switch back to north-south until a car crosses east-west. At 2am with no east-west traffic, the north-south car sits at a red light at an empty intersection forever.
+- Strict alternation forces the pattern P0, P1, P0, P1... A process that's faster or needs the CS more often gets held back by one that isn't even contending.
+- Keep `turn` in mind. Peterson's reuses it, but only as a tie-breaker when **both** want in.
+:::
+
+## Requirement 3: Bounded waiting
+- [Liveness]{.alert} property for *each process*: once $P_i$ asks to enter, only a bounded number $k$ of other entries can happen before $P_i$ gets its turn
+  - Progress says *someone* gets in. Bounded waiting says *you* eventually get in
+  - The bound is a **count of entries**, not a time. We can't assume anything about CPU speed
+- Traffic light: a car on the side street gets a green within $k$ light cycles. A light that always favors the busy main road starves the side street, even though traffic is always moving
+- Violating it means [starvation]{.alert}
+- Fix idea: take a number (FIFO), like a deli counter. Then $k = n - 1$
+
+::: {.notes}
+- Deli counter: without tickets, whoever pushes hardest gets served, and a polite customer can wait forever even though the counter is always busy.
+- For two processes the best possible bound is k = 1: once I'm waiting, you get in at most once more before I do. We'll show Peterson's achieves this.
+:::
+
+## Bounded waiting example: $P_0$ always wins
+:::: {.columns}
+::: {.column width="50%"}
+- Suppose a lock (whatever its implementation) always lets $P_0$ win a tie
+- Mutual exclusion ✓
+- Progress ✓: the CS is never idle while someone waits
+- Bounded waiting ✗: $P_1$ can lose every time
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="48%"}
+| Time | $P_0$ | $P_1$ |
+|:-:|:--|:--|
+| 1 | in CS | requests entry |
+| 2 | exits, re-requests | waiting |
+| 3 | **wins tie**, in CS | waiting |
+| 4 | exits, re-requests | waiting |
+| 5 | **wins tie**, in CS | waiting |
+| ... | ... | waiting forever |
+:::
+::::
+
+::: {.notes}
+- Ask: does this violate Progress? No. The CS is in use the whole time, so the *system* is making progress. Only P1 isn't. That's the difference between the two requirements.
+- Traffic light version: P0 is the main road with a steady stream of cars, P1 is the side street. Cars are always crossing (Progress ✓), but the side-street car never gets its green (Bounded waiting ✗).
+- Preview: the plain test_and_set spinlock later today has this exact problem. Let students find it themselves on that slide.
+:::
+
+## Progress vs. bounded waiting
+| | [Progress]{.alert} | [Bounded waiting]{.alert} |
+|:--|:--|:--|
+| Protects | the **system** | **each** process |
+| Promise | **someone** gets in | **you** get in |
+| Traffic light | an empty intersection with a waiting car doesn't stay red | the side street gets a green within $k$ cycles |
+| Failure | CS sits **empty** while processes wait (deadlock) | CS stays **busy**, but one process never gets a turn (starvation) |
+
+- Quick test: **is the CS being used?**
+  - Empty and someone's stuck → Progress violated
+  - Busy, but the same process keeps losing → Bounded waiting violated
+
+::: {.notes}
+- Progress is about the light working at all. Bounded waiting is about the light being fair.
+- Neither implies the other: "P0 always wins" has Progress but not Bounded waiting. A deadlocked lock fails Progress, and bounded waiting is moot because nobody gets in.
+- Ask students to classify: (a) both processes spin forever with the CS empty, (b) a fast process keeps grabbing the lock ahead of a slow one.
+:::
+
+## Discussion: Break this lock
+:::{.nonincremental}
+
+- This is $P_i$'s code (swap `i` and `j` for $P_j$). Which of the three requirements does it **meet**, and which does it **violate**? 
+- How would you fix it?
+:::
+
+```{.c}
+// shared: bool flag[2] = {FALSE, FALSE};
+do {
+  flag[i] = TRUE;
+  while (flag[j]);
+  //CRITICAL SECTION
+  flag[i] = FALSE;
+  //REMAINDER
+} while (TRUE);
+```
+::: {.notes}
+- **Mutual exclusion holds:** to be in the CS, $P_i$ must have seen `flag[j] == FALSE` *after* setting its own flag, so both can't get in.
+- **Progress fails (deadlock):** $P_i$ sets `flag[i] = TRUE`, context switch, $P_j$ sets `flag[j] = TRUE`. Now both spin forever on `while (flag[other])` and nobody is in the CS.
+- **Bounded waiting** is moot once it deadlocks.
+- If someone says it violates mutual exclusion: have them try to build the interleaving. Setting the flag *before* testing is what saves it. Contrast with the naive bool lock, which tests before setting.
+
+**Fixes students usually propose, in order:**
+
+1. **Check first, then raise your flag.** That's the naive bool lock again: both see the other's flag down, both raise, both enter. Fixes Progress, breaks ME.
+2. **Back off:** if the other flag is up, lower yours, wait, raise it again. Both can do this in lockstep forever: raise, see, lower, raise... That's **livelock**. Nobody is blocked, nobody gets in, so Progress still fails. Random backoff makes it unlikely, not impossible.
+3. **Add a tie-breaker `turn`, checked only when both flags are up:** `flag[i] = TRUE; turn = j; while (flag[j] && turn == j);`
+   - Other process not trying → `flag[j]` is FALSE, walk straight in (strict alternation failed this)
+   - Both trying → `turn` holds one value, so exactly one gets in; the last writer waits (flags-only failed this)
+
+**Bridge to Peterson's:** strict alternation used only `turn` and failed when one process wasn't trying. This lock uses only flags and fails when both are trying. Peterson's uses both: flags say who wants in, `turn` breaks the tie.
+:::
+
+## Peterson's solution
+- Two processes: $P_i$ and $P_j$
+- Two shared data items: `int turn; bool flag[2];`
+  ```{.c}
+  Pis code:
+  do {
+    flag[i] = TRUE;                // I want to enter critical section
+    turn = j;                      // let Pj go first if it wants
+    while (flag[j] && turn == j);  // busy wait
+    //CRITICAL SECTION
+    flag[i] = FALSE;               // Im leaving critical section
+    //REMAINDER
+  }while(TRUE);
+  ```
+  - turn is a tie-breaker: if both want in, the last one to write it lets the other go first
+  - if `flag[i] == true` → $P_i$ is ready for the critical section
+- To enter: $P_i$ sets `flag[i] = true` and `turn = j`
+  - i.e., $P_i$ demurs to $P_j$; if they are both ready turn will get set to?
+    - Whoever runs last sets the turn to the other process
+
+## Peterson's solution: mutual exclusion
+::: {style="font-size: 0.75em"}
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+:::
+- Can both processes be in the CS at the same time?
+  - $P_i$ gets past its `while` only if `flag[j] == FALSE` or `turn == i`
+  - Suppose both are in the CS. Look at who wrote `turn` **last**, say $P_i$ (it wrote `turn = j`)
+    - $P_j$ already set `flag[j] = TRUE` before its own `turn = i`, and nobody touches `turn` again
+    - So $P_i$ sees `flag[j] == TRUE && turn == j` and spins until $P_j$ leaves. Contradiction
+  - Both say "after you"; the **last** one to say it is the one who waits
+
+::: {.notes}
+Concrete trace to draw on the board (both want in at once):
+
+1. P0: `flag[0] = T`
+2. P1: `flag[1] = T`
+3. P0: `turn = 1`
+4. P1: `turn = 0`  ← last writer
+5. P0 checks `flag[1] && turn == 1` → T && F → **enters**
+6. P1 checks `flag[0] && turn == 0` → T && T → **spins**
+
+Swap the order of steps 3 and 4 and P1 enters instead. Either way exactly one gets in. If only one wants in, the other's flag is FALSE and it walks straight through.
+:::
+
+## Peterson's solution: progress
+::: {style="font-size: 0.75em"}
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+:::
+- If the CS is empty and someone wants in, does someone get in?
+  - $P_j$ not trying: `flag[j]` is FALSE, so $P_i$ walks straight in (strict alternation failed this)
+  - Both trying: `turn` is either `i` or `j`, so one of the two `while` conditions is false and that process enters (flags-only deadlocked here)
+
+## Peterson's solution: bounded waiting
+::: {style="font-size: 0.75em"}
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+:::
+- Once $P_i$ is waiting, how many times can $P_j$ get in first?
+  - At most **once**. To get back in, $P_j$ must set `turn = i`, which lets $P_i$ through and makes $P_j$ wait
+
+
+::: {.notes}
+- Contrast with "P0 always wins": there the winner re-requested and won the tie again. In Peterson's, re-requesting means saying "after you" again, so the waiting process wins.
+- Traffic light version: once the side-street car is waiting, the main road gets at most one more green.
+- Bounded waiting trace: P_i is spinning (flag[j] T, turn == j). P_j exits, sets flag[j] = F (P_i may slip in right here). P_j wants back in: flag[j] = T, turn = i. Now P_i's condition is `T && F` → enters; P_j's is `T && T` → spins.
+:::
+
+## Peterson's solution (cont'd)
+```{.c}
+Pis code:
+do {
+  flag[i] = TRUE;                // I want to enter critical section
+  turn = j;                      // let Pj go first if it wants
+  while (flag[j] && turn == j);  // busy wait
+  //CRITICAL SECTION
+  flag[i] = FALSE;               // Im leaving critical section
+  //REMAINDER
+}while(TRUE);
+```
+- Do you see any issues with this solution?
+  - Limitation: Only works for two processes
+  - Modern architectures may also break this solution
+    - Processors and/or compilers can reorder reads and writes that have no dependencies
+    - Multithreaded applications could lead to issues
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
