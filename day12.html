@@ -1112,13 +1112,13 @@ margin-right: 0; }
 </ul></li>
 <li class="fragment"><p>Counter at 10; Process A <code>counter++ (10 -&gt; 11);</code> Process B <code>counter-- (10 -&gt; 9);</code></p></li>
 <li class="fragment"><p>What could go wrong?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb1-1"><a aria-label="1"></a>mov <span class="bn">0x8049a1c</span><span class="op">,</span> <span class="op">%</span>eax</span>
-<span id="cb1-2"><a aria-label="2"></a>add $<span class="bn">0x1</span><span class="op">,</span> <span class="op">%</span>eax</span>
-<span id="cb1-3"><a aria-label="3"></a>mov <span class="op">%</span>eax<span class="op">,</span> <span class="bn">0x8049a1c</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource gnuassembler number-lines code-with-copy"><code class="sourceCode gnuassembler"><span id="cb1-1"><a aria-label="1"></a>mov <span class="bn">0x8049a1c</span><span class="op">,</span> <span class="op">%</span><span class="kw">eax</span></span>
+<span id="cb1-2"><a aria-label="2"></a><span class="kw">add</span> <span class="dv">$0</span>x1<span class="op">,</span> <span class="op">%</span><span class="kw">eax</span></span>
+<span id="cb1-3"><a aria-label="3"></a>mov <span class="op">%</span><span class="kw">eax</span><span class="op">,</span> <span class="bn">0x8049a1c</span></span>
 <span id="cb1-4"><a aria-label="4"></a></span>
-<span id="cb1-5"><a aria-label="5"></a>mov <span class="bn">0x8049a1c</span><span class="op">,</span> <span class="op">%</span>eax</span>
-<span id="cb1-6"><a aria-label="6"></a>sub $<span class="bn">0x1</span><span class="op">,</span> <span class="op">%</span>eax</span>
-<span id="cb1-7"><a aria-label="7"></a>mov <span class="op">%</span>eax<span class="op">,</span> <span class="bn">0x8049a1c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<span id="cb1-5"><a aria-label="5"></a>mov <span class="bn">0x8049a1c</span><span class="op">,</span> <span class="op">%</span><span class="kw">eax</span></span>
+<span id="cb1-6"><a aria-label="6"></a><span class="kw">sub</span> <span class="dv">$0</span>x1<span class="op">,</span> <span class="op">%</span><span class="kw">eax</span></span>
+<span id="cb1-7"><a aria-label="7"></a>mov <span class="op">%</span><span class="kw">eax</span><span class="op">,</span> <span class="bn">0x8049a1c</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
 </ul>
 </section>
 <section id="race-conditions" class="slide level2">
@@ -1147,7 +1147,7 @@ margin-right: 0; }
 <h2>Beware naïve implementations</h2>
 <ul>
 <li class="fragment"><p>Why not use a simple bool?</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb2-1"><a aria-label="1"></a><span class="dt">bool</span> lock <span class="op">=</span> FALSE</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb2-1"><a aria-label="1"></a><span class="dt">bool</span> lock <span class="op">=</span> FALSE<span class="op">;</span></span>
 <span id="cb2-2"><a aria-label="2"></a><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb2-3"><a aria-label="3"></a>  <span class="cf">while</span> <span class="op">(</span>lock <span class="op">==</span> TRUE<span class="op">);</span></span>
 <span id="cb2-4"><a aria-label="4"></a>  lock <span class="op">=</span> TRUE<span class="op">;</span></span>
@@ -1569,13 +1569,13 @@ display:block!important;
 <ul>
 <li class="fragment"><p>Two processes: <span class="math inline">\(P_i\)</span> and <span class="math inline">\(P_j\)</span></p></li>
 <li class="fragment"><p>Two shared data items: <code>int turn; bool flag[2];</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb5-1"><a aria-label="1"></a>Pis code<span class="op">:</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb5-1"><a aria-label="1"></a><span class="co">// P_i&#39;s code (j is the other)</span></span>
 <span id="cb5-2"><a aria-label="2"></a><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb5-3"><a aria-label="3"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> TRUE<span class="op">;</span>                <span class="co">// I want to enter critical section</span></span>
 <span id="cb5-4"><a aria-label="4"></a>  turn <span class="op">=</span> j<span class="op">;</span>                      <span class="co">// let Pj go first if it wants</span></span>
 <span id="cb5-5"><a aria-label="5"></a>  <span class="cf">while</span> <span class="op">(</span>flag<span class="op">[</span>j<span class="op">]</span> <span class="op">&amp;&amp;</span> turn <span class="op">==</span> j<span class="op">);</span>  <span class="co">// busy wait</span></span>
 <span id="cb5-6"><a aria-label="6"></a>  <span class="co">//CRITICAL SECTION</span></span>
-<span id="cb5-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// Im leaving critical section</span></span>
+<span id="cb5-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// I&#39;m leaving critical section</span></span>
 <span id="cb5-8"><a aria-label="8"></a>  <span class="co">//REMAINDER</span></span>
 <span id="cb5-9"><a aria-label="9"></a><span class="op">}</span><span class="cf">while</span><span class="op">(</span>TRUE<span class="op">);</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
@@ -1594,13 +1594,13 @@ display:block!important;
 <section id="petersons-solution-mutual-exclusion" class="slide level2">
 <h2>Peterson’s solution: mutual exclusion</h2>
 <div style="font-size: 0.75em">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb6-1"><a aria-label="1"></a>Pis code<span class="op">:</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb6-1"><a aria-label="1"></a><span class="co">// P_i&#39;s code (j is the other)</span></span>
 <span id="cb6-2"><a aria-label="2"></a><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb6-3"><a aria-label="3"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> TRUE<span class="op">;</span>                <span class="co">// I want to enter critical section</span></span>
 <span id="cb6-4"><a aria-label="4"></a>  turn <span class="op">=</span> j<span class="op">;</span>                      <span class="co">// let Pj go first if it wants</span></span>
 <span id="cb6-5"><a aria-label="5"></a>  <span class="cf">while</span> <span class="op">(</span>flag<span class="op">[</span>j<span class="op">]</span> <span class="op">&amp;&amp;</span> turn <span class="op">==</span> j<span class="op">);</span>  <span class="co">// busy wait</span></span>
 <span id="cb6-6"><a aria-label="6"></a>  <span class="co">//CRITICAL SECTION</span></span>
-<span id="cb6-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// Im leaving critical section</span></span>
+<span id="cb6-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// I&#39;m leaving critical section</span></span>
 <span id="cb6-8"><a aria-label="8"></a>  <span class="co">//REMAINDER</span></span>
 <span id="cb6-9"><a aria-label="9"></a><span class="op">}</span><span class="cf">while</span><span class="op">(</span>TRUE<span class="op">);</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -1642,13 +1642,13 @@ display:block!important;
 <section id="petersons-solution-progress" class="slide level2">
 <h2>Peterson’s solution: progress</h2>
 <div style="font-size: 0.75em">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb7-1"><a aria-label="1"></a>Pis code<span class="op">:</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb7-1"><a aria-label="1"></a><span class="co">// P_i&#39;s code (j is the other)</span></span>
 <span id="cb7-2"><a aria-label="2"></a><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb7-3"><a aria-label="3"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> TRUE<span class="op">;</span>                <span class="co">// I want to enter critical section</span></span>
 <span id="cb7-4"><a aria-label="4"></a>  turn <span class="op">=</span> j<span class="op">;</span>                      <span class="co">// let Pj go first if it wants</span></span>
 <span id="cb7-5"><a aria-label="5"></a>  <span class="cf">while</span> <span class="op">(</span>flag<span class="op">[</span>j<span class="op">]</span> <span class="op">&amp;&amp;</span> turn <span class="op">==</span> j<span class="op">);</span>  <span class="co">// busy wait</span></span>
 <span id="cb7-6"><a aria-label="6"></a>  <span class="co">//CRITICAL SECTION</span></span>
-<span id="cb7-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// Im leaving critical section</span></span>
+<span id="cb7-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// I&#39;m leaving critical section</span></span>
 <span id="cb7-8"><a aria-label="8"></a>  <span class="co">//REMAINDER</span></span>
 <span id="cb7-9"><a aria-label="9"></a><span class="op">}</span><span class="cf">while</span><span class="op">(</span>TRUE<span class="op">);</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -1663,13 +1663,13 @@ display:block!important;
 <section id="petersons-solution-bounded-waiting" class="slide level2">
 <h2>Peterson’s solution: bounded waiting</h2>
 <div style="font-size: 0.75em">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb8-1"><a aria-label="1"></a>Pis code<span class="op">:</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb8-1"><a aria-label="1"></a><span class="co">// P_i&#39;s code (j is the other)</span></span>
 <span id="cb8-2"><a aria-label="2"></a><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb8-3"><a aria-label="3"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> TRUE<span class="op">;</span>                <span class="co">// I want to enter critical section</span></span>
 <span id="cb8-4"><a aria-label="4"></a>  turn <span class="op">=</span> j<span class="op">;</span>                      <span class="co">// let Pj go first if it wants</span></span>
 <span id="cb8-5"><a aria-label="5"></a>  <span class="cf">while</span> <span class="op">(</span>flag<span class="op">[</span>j<span class="op">]</span> <span class="op">&amp;&amp;</span> turn <span class="op">==</span> j<span class="op">);</span>  <span class="co">// busy wait</span></span>
 <span id="cb8-6"><a aria-label="6"></a>  <span class="co">//CRITICAL SECTION</span></span>
-<span id="cb8-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// Im leaving critical section</span></span>
+<span id="cb8-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// I&#39;m leaving critical section</span></span>
 <span id="cb8-8"><a aria-label="8"></a>  <span class="co">//REMAINDER</span></span>
 <span id="cb8-9"><a aria-label="9"></a><span class="op">}</span><span class="cf">while</span><span class="op">(</span>TRUE<span class="op">);</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -1699,13 +1699,13 @@ display:block!important;
 </section>
 <section id="petersons-solution-contd" class="slide level2">
 <h2>Peterson’s solution (cont’d)</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb9-1"><a aria-label="1"></a>Pis code<span class="op">:</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource c number-lines code-with-copy"><code class="sourceCode c"><span id="cb9-1"><a aria-label="1"></a><span class="co">// P_i&#39;s code (j is the other)</span></span>
 <span id="cb9-2"><a aria-label="2"></a><span class="cf">do</span> <span class="op">{</span></span>
 <span id="cb9-3"><a aria-label="3"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> TRUE<span class="op">;</span>                <span class="co">// I want to enter critical section</span></span>
 <span id="cb9-4"><a aria-label="4"></a>  turn <span class="op">=</span> j<span class="op">;</span>                      <span class="co">// let Pj go first if it wants</span></span>
 <span id="cb9-5"><a aria-label="5"></a>  <span class="cf">while</span> <span class="op">(</span>flag<span class="op">[</span>j<span class="op">]</span> <span class="op">&amp;&amp;</span> turn <span class="op">==</span> j<span class="op">);</span>  <span class="co">// busy wait</span></span>
 <span id="cb9-6"><a aria-label="6"></a>  <span class="co">//CRITICAL SECTION</span></span>
-<span id="cb9-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// Im leaving critical section</span></span>
+<span id="cb9-7"><a aria-label="7"></a>  flag<span class="op">[</span>i<span class="op">]</span> <span class="op">=</span> FALSE<span class="op">;</span>               <span class="co">// I&#39;m leaving critical section</span></span>
 <span id="cb9-8"><a aria-label="8"></a>  <span class="co">//REMAINDER</span></span>
 <span id="cb9-9"><a aria-label="9"></a><span class="op">}</span><span class="cf">while</span><span class="op">(</span>TRUE<span class="op">);</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
