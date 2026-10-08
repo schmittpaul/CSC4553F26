@@ -1,0 +1,350 @@
+---
+title: CSC 4553
+subtitle: Fall 2026 - Day 13
+format:
+  clean-revealjs:
+    self-contained: true
+    incremental: true
+    margin: 0.15
+---
+
+## Admin
+:::{.nonincremental}
+- Programming assignment 2 (schedfit) due Monday, 18:00
+- Lab due Friday, 18:00
+- Quiz due Monday, 18:00
+- Exam regrade request deadline is Friday, 18:00
+:::
+
+# Primitives {background-color="#40666e"}
+## Questions to consider
+:::{.nonincremental}
+- How do synchronization solutions compare in implementation / function?
+- What is priority inversion, and how does priority inheritance fix it?
+- When would you choose a counting semaphore versus a binary semaphore or mutex, and what distinguishes them?
+:::
+
+## Hardware solutions: atomicity
+- Recall the naïve `bool` lock: both threads read `lock == FALSE` in the gap before either one set it
+- Fix: let the hardware do the read *and* the write as **one indivisible step**, an [atomic instruction]{.alert}
+  - No other CPU can touch that memory location partway through
+- Why not just disable interrupts? (this was the original solution) 
+  - Only stops preemption on *this* CPU; other cores keep running
+
+::: {.notes}
+- Tie straight back to the day 12 interleaving table: the bug was the gap between step 1 (test) and step 4 (set). An atomic instruction makes that gap impossible.
+- How the hardware does it: on modern x86 a `lock`-prefixed instruction holds the cache line exclusively for the duration (old CPUs locked the whole memory bus). Other cores trying to touch that line wait.
+- Disabling interrupts: works on a uniprocessor (no preemption means no interleaving), but it's privileged and does nothing to stop another core. That's why it's not the general answer anymore.
+:::
+
+## Atomic instructions
+- Two classic ones:
+  - `test_and_set(&x)`: set `x` to true and return its *old* value
+  - `compare_and_swap(&x, expected, new)`: only if `x == expected`, set it to `new`; return the old value
+    - Real APIs differ: C11 `atomic_compare_exchange_strong()` returns a bool (did the swap happen?) and writes the old value back into `expected`
+    - Same information either way: `old value == expected` means the swap happened
+  - Either way, one instruction both checks "was it free?" and claims it
+- Limit: works on a single word of memory, not on big operations
+  - An "atomic B-tree update" instruction? No. 
+
+::: {.notes}
+- Why return the *old* value? After the call, `x` is always TRUE, so the new value tells you nothing. The old value answers "was it already taken?"
+  - Old value FALSE: it was free, and this instruction just claimed it. You're in.
+  - Old value TRUE: someone else holds it; writing TRUE again changed nothing. Try again.
+  - Hence `while (test_and_set(&lock));` loops until it gets FALSE back. Reading the old value *is* the test, done in the same step as the set, so only one thread can ever get FALSE.
+  - Same idea for `compare_and_swap`: `old value` == `expected` means your swap happened; otherwise someone beat you.
+- The C-like `test_and_set` code on the next slide is a *description* of what the instruction does. In hardware it is one instruction, not three lines that could be interrupted.
+:::
+
+## Does this solution meet the requirements?
+```{.c}
+bool test_and_set(bool *lock){
+  bool ret = *lock;
+  *lock = TRUE;
+  return ret;
+}
+
+lock = FALSE;
+do{
+  while(test_and_set(&lock));
+  // CRITICAL SECTION
+  lock = FALSE;
+}while(true);
+```
+- Mutual exclusion?
+  - Yes
+- Progress?
+  - Yes: when the lock is released, a waiting process will acquire it
+- Bounded waiting?
+  - No: an unlucky process could be endlessly passed over based on the scheduler's decisions
+
+## Mutex locks
+- Atomic instruction-based solutions are complicated and generally not used by application programmers 
+- Any solution to the critical section problem requires a lock
+  - Peterson's solution is an example (in software)
+  - `test_and_set()` / `compare_and_swap()` are hardware implementations
+- Simplest commonly used solution is [mutex]{.alert} lock
+  - Boolean variable indicating if lock is available or not
+
+## Mutex locks (cont'd)
+- Protect a critical section  by
+  - First `acquire()` a lock
+  - Then `release()` the lock
+- What's going on under the hood?
+  ```{.c}
+  void lock(lock_t *lock) {
+    while (test_and_set(&lock->flag))
+    ; // spin-wait (do nothing)
+  }
+  ```
+  - `test_and_set()` or `compare_and_swap()`
+
+## Mutex locks (cont'd)
+- Calls to `acquire()` and `release()` must be [atomic]{.alert}
+- But this solution requires **busy waiting**
+  - This type of mutex is therefore often called a [spinlock]{.alert}
+- There are also mutexes that block instead of busy-waiting (e.g., those built on futexes), and some that do both
+- Note: [mutexes are owned by the thread that locks them]{.alert}. *Only the thread that acquired the mutex can release it*
+
+## Spin or block?
+:::{.nonincremental}
+For each scenario, would you use a **spinlock** or a **blocking** mutex? Why?
+
+- (a) A kernel data structure protected by a lock held for ~50 CPU cycles
+- (b) A user-space cache entry lock held for ~100 µs while computing a result
+- (c) A file lock held for several seconds while the file is being edited
+- (d) A lock on a single-CPU system where only one thread can run at a time
+:::
+::: {.notes}
+Rule of thumb: **spin if the expected wait is shorter than ~2 context switches** (a context switch is roughly 1–10 µs depending on the system). Otherwise block.
+
+- (a) **Spin.** 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.
+- (b) **Block.** 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.
+- (c) **Block** (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.
+- (d) **Never spin.** On a uniprocessor, the lock holder cannot make progress while you're spinning — you're burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.
+
+Key insight: the break-even isn't about the lock, it's about the **expected hold time** relative to the cost of a context switch. Real systems often use **adaptive mutexes** that spin briefly, then block if the lock isn't acquired quickly.
+:::
+
+## Futex: fast path, slow path
+- Blocking is safe but costly (a syscall every time); real systems want the common case to be cheap
+- [Futex]{.alert} (**F**ast **U**serspace mu**TEX**, Linux 2002) makes that possible
+- Key idea: most lock acquisitions are **uncontended**
+  - Put the lock variable in **user-space memory**
+  - Try to grab it with a single atomic instruction (e.g., `cmpxchg`)
+  - If you win → done. No syscall, no kernel involvement (~10 ns)
+- Only on **contention** do you call into the kernel via the `futex()` syscall
+  - Kernel adds you to a wait queue and puts you to sleep
+  - Releaser, if there are waiters, calls `futex()` to wake one up
+
+## Futex (cont'd)
+- This is why `pthread_mutex_t` on Linux is cheap when uncontended — it's built on futexes
+- Same story for `std::mutex` in C++ and most modern language runtimes
+- Question: why can't you build a *blocking* mutex purely in user space?
+  - Blocking an OS thread — taking it off the run queue — is a kernel operation by definition
+  - Only the kernel can decide which thread runs on a CPU
+  - Futex is the **minimum-syscall** way to ask the kernel for that service
+
+## Hidden costs of locking
+In 1997, NASA's Mars Pathfinder started having mysterious resets on Mars. From Earth, engineers saw the system repeatedly rebooting for no obvious reason. Not ideal when your computer is ~190 million km away.  
+
+The cause: [priority inversion]{.alert}.
+
+- Low-priority task holds a mutex
+- High-priority task needs it, so it blocks
+- Medium-priority task (doesn't need the mutex) keeps preempting the low-priority one
+- Low never runs, so it never releases; high is starved
+- A watchdog sees the stall as a fault and resets the system. Over and over.
+
+::: {.notes}
+- The OS was VxWorks; the mutex had been created with priority inheritance turned off. Hold that detail for the next slide's fix.
+:::
+
+## Priority inversion
+- Any ideas on how to fix?
+  - [Priority inheritance]{.alert}: low priority processes are temporarily given priorities that match those waiting on them
+
+::: {.notes}
+- Pathfinder epilogue: JPL reproduced the bug on a ground replica, then uploaded a patch that turned priority inheritance on for that mutex. The resets stopped.
+:::
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
+## Semaphores
+:::: {.columns}
+::: {.column width="68%" .nonincremental}
+- Synchronization tool that provides more sophisticated ways (than mutex locks)  for processes to synchronize their activities
+- Semaphore `S`: integer variable
+- Can only be accessed via two atomic operations
+  - `wait()` and `signal()`
+  - Originally called `P()` and `V()` (because, Dutch)
+- Do not have ownership, any thread can signal (increment) or wait (decrement)
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="30%"}
+```{.c}
+wait(S) {
+    while (S <= 0)
+       ; // busy
+    S--;
+}
+
+signal(S) {
+    S++;
+}
+```
+:::
+::::
+
+## Semaphores (cont'd)
+:::: {.columns}
+::: {.column width="68%" .nonincremental}
+- [Binary semaphore]{.alert}: integer value can range only between 0 and 1
+  - Functionally similar to a mutex, but without ownership — any thread can signal it
+
+
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="30%"}
+```{.c}
+do{
+  wait(mutex);
+  //CS
+  signal(mutex);
+}while(TRUE);
+```
+:::
+::::
+- [Counting semaphore]{.alert}: integer value can range over an unrestricted domain
+  - When would this make sense?
+    - Protect a finite set of resources rather than a single one (e.g., you have a pool of shared db connections)
+    - Initialize `S` to the number of resources
+    - Decrement `S` each time someone grabs a resource, increment when they release
+
+## Enforce the order
+:::{.nonincremental}
+Semaphore can also be used to impose order...
+
+Three threads each loop forever: one prints `A`, one prints `B`, one prints `C`.
+
+Using **only semaphores**, guarantee the output is always `ABCABCABC...`
+
+- How many semaphores do you need?
+- What are their initial values?
+- Where do the `wait()` and `signal()` calls go?
+
+:::
+::: {.notes}
+One semaphore per thread, chained in a ring — each thread waits on its own semaphore and signals the next one's:
+
+```c
+sem sA = 1, sB = 0, sC = 0;
+
+TA: while(1){ wait(sA); print("A"); signal(sB); }
+TB: while(1){ wait(sB); print("B"); signal(sC); }
+TC: while(1){ wait(sC); print("C"); signal(sA); }
+```
+
+- **Initial values matter.** Exactly one semaphore starts at 1 — that picks who goes first. Common mistake: all initialized to 0 → every thread blocks on its first `wait()` → deadlock. Another: all initialized to 1 → three tokens circulate, so the order is never enforced.
+- **The wrap-around** (`TC` signals `sA`) is what makes it repeat; each `signal(next)` → `wait(next)` pair is one link in the chain.
+- **Why not mutexes?** Because this is *signaling* between threads, not *mutual exclusion* — and mutexes have ownership.
+  - Look at who calls what: `TA` calls `signal(sB)` but never called `wait(sB)`. The `wait()` and `signal()` on each semaphore happen in **different threads**.
+  - A mutex is owned by the thread that locked it — only that thread may unlock it. The lock/unlock pair must bracket a critical section *within one thread*.
+  - Try it anyway: to make `TB` block at the start, `mB` must already be locked. Who locks it? Say `main` does. Then `TA` must unlock `mB` to let `TB` go — but `TA` doesn't own it. With pthreads that's undefined behavior for a default mutex, or `EPERM` for an error-checking mutex. Either way, it's not a valid use.
+  - Semaphores have no owner: the value is just a counter, and any thread can increment it. That's exactly what "pass the token to the next thread" needs.
+  - Semaphores also **remember** a signal: if `TA` calls `signal(sB)` before `TB` reaches `wait(sB)`, the value stays at 1 and `TB` goes right through. Nothing is lost.
+  - If you *only* had mutexes, the correct tool is a mutex + condition variable + a shared `turn` variable (each thread waits until `turn` is its letter, prints, sets `turn` to the next letter, and broadcasts). That works, but it's more code — a good callback to condition variables from day 11.
+- Invariant to point out: at any moment the sum sA + sB + sC is at most 1 — a single "token" is passed around the ring.
+
+Stretch if time: make it print `ABBCABBC...` Multiple valid answers (e.g., TB loops twice per turn, or two B threads chained B1→B2). Good for discussion — no single right answer.
+:::
+
+## Blocking semaphores
+:::: {.columns}
+::: {.column width="58%"}
+- We add `sleep()` and `wakeup()` to the underlying implementation
+- Call to wait, and semaphore not available, process is blocked with `sleep()` (wait state) and placed on a waiting queue
+- Blocked processes are notified of an available semaphore by the `wakeup()` operation
+  - goes from waiting to ready
+  - Able to achieve bounded wait and progress with FIFO queue
+
+:::
+
+::: {.column width="2%"}
+:::
+
+::: {.column width="40%"}
+```{.c}
+wait(semaphore *S) {
+   S->value--;
+   if (S->value < 0) {
+      add process to S->list;
+      sleep();
+   }
+}
+
+signal(semaphore *S) {
+   S->value++;
+   if (S->value <= 0) {
+      remove P from S->list;
+      wakeup(P);
+   }
+}
+
+```
+:::
+::::
+
+## Mutexes vs. semaphores
+- Mutexes are generally lighter weight / faster
+- Semaphores can support multiple instances
+- Semaphores don't have the [ownership limitations]{.alert} of mutexes
+
+## Choose your primitive
+- For each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores
+- Scenario 1: You need to protect a critical section where only one thread should execute at a time, and the critical section is expected to be held for a relatively long duration.
+  - Blocking mutex (e.g., `pthread_mutex_t`, built on a futex)
+- Scenario 2: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.
+  - Counting semaphore
+
+## Choose your primitive (cont'd)
+- For each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores
+- Scenario 3: You need to increment a shared counter frequently, and the operation is very quick.
+  - Atomic instruction
+- Scenario 4: You need to protect a critical section where only one thread should execute at a time, but the critical section is expected to be held for a very short duration.
+  - Spin lock mutex
+
+## Beware: mistakes are easy to make
+-  Incorrect use of semaphore operations
+    - wrong order: `signal(mutex)` ...  `wait(mutex)`
+    - repeating: `wait(mutex)`  ...  `wait(mutex)`
+    - Omitting of `wait(mutex)` and/or `signal(mutex)`
+- Be careful
+
+## Condition variables
+- Paired with a mutex to let threads wait for a condition rather than spin
+- `x.wait()`: calling thread releases the mutex and suspends until signaled; it reacquires the mutex before returning
+- `x.signal()`: wakes one waiter (if any); no effect if no waiters
+- `x.broadcast()`: wake *all* waiters — useful when multiple threads may now be able to proceed
+- [Not like a semaphore]{.alert}: a semaphore *remembers* a signal (the count stays incremented, so a later `wait()` goes right through); a CV signal with no one waiting is simply **lost**
+- Good fit for producer-consumer and any case where threads must sleep until a resource / condition is ready
+
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
