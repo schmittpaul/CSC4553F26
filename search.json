@@ -56,13 +56,6 @@
     "text": "Mutex locks (cont’d)\n\nCalls to acquire() and release() must be atomic\nBut this solution requires busy waiting\n\nThis type of mutex is therefore often called a spinlock\n\nThere are also mutexes that block instead of busy-waiting (e.g., those built on futexes), and some that do both\nNote: mutexes are owned by the thread that locks them. Only the thread that acquired the mutex can release it"
   },
   {
-    "objectID": "day13.html#spin-or-block",
-    "href": "day13.html#spin-or-block",
-    "title": "CSC 4553",
-    "section": "Spin or block?",
-    "text": "Spin or block?\nFor each scenario, would you use a spinlock or a blocking mutex? Why?\n\n\nA kernel data structure protected by a lock held for ~50 CPU cycles\n\n\nA user-space cache entry lock held for ~100 µs while computing a result\n\n\nA file lock held for several seconds while the file is being edited\n\n\nA lock on a single-CPU system where only one thread can run at a time\n\n\n\nRule of thumb: spin if the expected wait is shorter than ~2 context switches (a context switch is roughly 1–10 µs depending on the system). Otherwise block.\n\n\nSpin. 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.\n\n\nBlock. 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.\n\n\nBlock (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.\n\n\nNever spin. On a uniprocessor, the lock holder cannot make progress while you’re spinning — you’re burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.\n\n\nKey insight: the break-even isn’t about the lock, it’s about the expected hold time relative to the cost of a context switch. Real systems often use adaptive mutexes that spin briefly, then block if the lock isn’t acquired quickly."
-  },
-  {
     "objectID": "day13.html#futex-fast-path-slow-path",
     "href": "day13.html#futex-fast-path-slow-path",
     "title": "CSC 4553",
@@ -137,14 +130,14 @@
     "href": "day13.html#choose-your-primitive",
     "title": "CSC 4553",
     "section": "Choose your primitive",
-    "text": "Choose your primitive\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 1: You need to protect a critical section where only one thread should execute at a time, and the critical section is expected to be held for a relatively long duration.\n\nBlocking mutex (e.g., pthread_mutex_t, built on a futex)\n\nScenario 2: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.\n\nCounting semaphore"
+    "text": "Choose your primitive\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 1: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.\n\nCounting semaphore\n\nScenario 2: You need to increment a shared counter frequently, and the operation is very quick.\n\nAtomic instruction\n\nScenario 3: A kernel data structure protected by a lock held for ~50 CPU cycles.\n\nSpin lock mutex"
   },
   {
     "objectID": "day13.html#choose-your-primitive-contd",
     "href": "day13.html#choose-your-primitive-contd",
     "title": "CSC 4553",
     "section": "Choose your primitive (cont’d)",
-    "text": "Choose your primitive (cont’d)\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 3: You need to increment a shared counter frequently, and the operation is very quick.\n\nAtomic instruction\n\nScenario 4: You need to protect a critical section where only one thread should execute at a time, but the critical section is expected to be held for a very short duration.\n\nSpin lock mutex"
+    "text": "Choose your primitive (cont’d)\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 4: A user-space cache entry lock held for ~100 µs while computing a result.\n\nBlocking mutex (e.g., pthread_mutex_t, built on a futex)\n\nScenario 5: A file lock held for several seconds while the file is being edited.\n\nBlocking mutex\n\nScenario 6: A lock on a single-CPU system where only one thread can run at a time.\n\nBlocking mutex: never spin on a uniprocessor\n\n\n\nRule of thumb for spin vs. block: spin if the expected wait is shorter than ~2 context switches (a context switch is roughly 1–10 µs depending on the system). Otherwise block.\n\n\nSpin. 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.\n\n\nBlock. 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.\n\n\nBlock (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.\n\n\nNever spin. On a uniprocessor, the lock holder cannot make progress while you’re spinning — you’re burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.\n\n\nKey insight: the break-even isn’t about the lock, it’s about the expected hold time relative to the cost of a context switch. Real systems often use adaptive mutexes that spin briefly, then block if the lock isn’t acquired quickly."
   },
   {
     "objectID": "day13.html#beware-mistakes-are-easy-to-make",

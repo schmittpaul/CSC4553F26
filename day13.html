@@ -1249,52 +1249,6 @@ display:block!important;
 <li class="fragment">Note: <span class="alert">mutexes are owned by the thread that locks them</span>. <em>Only the thread that acquired the mutex can release it</em></li>
 </ul>
 </section>
-<section id="spin-or-block" class="slide level2">
-<h2>Spin or block?</h2>
-<p>For each scenario, would you use a <strong>spinlock</strong> or a <strong>blocking</strong> mutex? Why?</p>
-<ul>
-<li><ol type="a">
-<li>A kernel data structure protected by a lock held for ~50 CPU cycles</li>
-</ol></li>
-<li><ol start="2" type="a">
-<li>A user-space cache entry lock held for ~100 µs while computing a result</li>
-</ol></li>
-<li><ol start="3" type="a">
-<li>A file lock held for several seconds while the file is being edited</li>
-</ol></li>
-<li><ol start="4" type="a">
-<li>A lock on a single-CPU system where only one thread can run at a time</li>
-</ol></li>
-</ul>
-<aside class="notes">
-<p>Rule of thumb: <strong>spin if the expected wait is shorter than ~2 context switches</strong> (a context switch is roughly 1–10 µs depending on the system). Otherwise block.</p>
-<ul>
-<li><ol type="a">
-<li><strong>Spin.</strong> 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.</li>
-</ol></li>
-<li><ol start="2" type="a">
-<li><strong>Block.</strong> 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.</li>
-</ol></li>
-<li><ol start="3" type="a">
-<li><strong>Block</strong> (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.</li>
-</ol></li>
-<li><ol start="4" type="a">
-<li><strong>Never spin.</strong> On a uniprocessor, the lock holder cannot make progress while you’re spinning — you’re burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.</li>
-</ol></li>
-</ul>
-<p>Key insight: the break-even isn’t about the lock, it’s about the <strong>expected hold time</strong> relative to the cost of a context switch. Real systems often use <strong>adaptive mutexes</strong> that spin briefly, then block if the lock isn’t acquired quickly.</p>
-<style type="text/css">
-span.MJX_Assistive_MathML {
-position:absolute!important;
-clip: rect(1px, 1px, 1px, 1px);
-padding: 1px 0 0 0!important;
-border: 0!important;
-height: 1px!important;
-width: 1px!important;
-overflow: hidden!important;
-display:block!important;
-}</style></aside>
-</section>
 <section id="futex-fast-path-slow-path" class="slide level2">
 <h2>Futex: fast path, slow path</h2>
 <ul>
@@ -1532,13 +1486,17 @@ display:block!important;
 <h2>Choose your primitive</h2>
 <ul>
 <li class="fragment">For each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores</li>
-<li class="fragment">Scenario 1: You need to protect a critical section where only one thread should execute at a time, and the critical section is expected to be held for a relatively long duration.
-<ul>
-<li class="fragment">Blocking mutex (e.g., <code>pthread_mutex_t</code>, built on a futex)</li>
-</ul></li>
-<li class="fragment">Scenario 2: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.
+<li class="fragment">Scenario 1: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.
 <ul>
 <li class="fragment">Counting semaphore</li>
+</ul></li>
+<li class="fragment">Scenario 2: You need to increment a shared counter frequently, and the operation is very quick.
+<ul>
+<li class="fragment">Atomic instruction</li>
+</ul></li>
+<li class="fragment">Scenario 3: A kernel data structure protected by a lock held for ~50 CPU cycles.
+<ul>
+<li class="fragment">Spin lock mutex</li>
 </ul></li>
 </ul>
 </section>
@@ -1546,15 +1504,47 @@ display:block!important;
 <h2>Choose your primitive (cont’d)</h2>
 <ul>
 <li class="fragment">For each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores</li>
-<li class="fragment">Scenario 3: You need to increment a shared counter frequently, and the operation is very quick.
+<li class="fragment">Scenario 4: A user-space cache entry lock held for ~100 µs while computing a result.
 <ul>
-<li class="fragment">Atomic instruction</li>
+<li class="fragment">Blocking mutex (e.g., <code>pthread_mutex_t</code>, built on a futex)</li>
 </ul></li>
-<li class="fragment">Scenario 4: You need to protect a critical section where only one thread should execute at a time, but the critical section is expected to be held for a very short duration.
+<li class="fragment">Scenario 5: A file lock held for several seconds while the file is being edited.
 <ul>
-<li class="fragment">Spin lock mutex</li>
+<li class="fragment">Blocking mutex</li>
+</ul></li>
+<li class="fragment">Scenario 6: A lock on a single-CPU system where only one thread can run at a time.
+<ul>
+<li class="fragment">Blocking mutex: never spin on a uniprocessor</li>
 </ul></li>
 </ul>
+<aside class="notes">
+<p>Rule of thumb for spin vs. block: <strong>spin if the expected wait is shorter than ~2 context switches</strong> (a context switch is roughly 1–10 µs depending on the system). Otherwise block.</p>
+<ul>
+<li><ol start="3" type="1">
+<li><strong>Spin.</strong> 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.</li>
+</ol></li>
+<li><ol start="4" type="1">
+<li><strong>Block.</strong> 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.</li>
+</ol></li>
+<li><ol start="5" type="1">
+<li><strong>Block</strong> (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.</li>
+</ol></li>
+<li><ol start="6" type="1">
+<li><strong>Never spin.</strong> On a uniprocessor, the lock holder cannot make progress while you’re spinning — you’re burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.</li>
+</ol></li>
+</ul>
+<p>Key insight: the break-even isn’t about the lock, it’s about the <strong>expected hold time</strong> relative to the cost of a context switch. Real systems often use <strong>adaptive mutexes</strong> that spin briefly, then block if the lock isn’t acquired quickly.</p>
+<style type="text/css">
+span.MJX_Assistive_MathML {
+position:absolute!important;
+clip: rect(1px, 1px, 1px, 1px);
+padding: 1px 0 0 0!important;
+border: 0!important;
+height: 1px!important;
+width: 1px!important;
+overflow: hidden!important;
+display:block!important;
+}</style></aside>
 </section>
 <section id="beware-mistakes-are-easy-to-make" class="slide level2">
 <h2>Beware: mistakes are easy to make</h2>
