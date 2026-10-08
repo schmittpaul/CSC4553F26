@@ -1,140 +1,168 @@
 [
   {
-    "objectID": "day12.html#admin",
-    "href": "day12.html#admin",
+    "objectID": "day13.html#admin",
+    "href": "day13.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nProgramming assignment 2 (schedfit) due Monday, 18:00\nLab due Friday, 18:00\nQuiz due Monday, 18:00"
+    "text": "Admin\n\nProgramming assignment 2 (schedfit) due Monday, 18:00\nLab due Friday, 18:00\nQuiz due Monday, 18:00\nExam regrade request deadline is Friday, 18:00"
   },
   {
-    "objectID": "day12.html#questions-to-consider",
-    "href": "day12.html#questions-to-consider",
+    "objectID": "day13.html#questions-to-consider",
+    "href": "day13.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the requirements for a critical section synchronization solution, and how do bounded waiting and progress differ?\nWhy do naive implementations like a simple boolean lock fail, and what must happen atomically instead?\nWhat are the practical limitations of Peterson’s solution, and why don’t they work well on modern architectures?"
+    "text": "Questions to consider\n\nHow do synchronization solutions compare in implementation / function?\nWhat is priority inversion, and how does priority inheritance fix it?\nWhen would you choose a counting semaphore versus a binary semaphore or mutex, and what distinguishes them?"
   },
   {
-    "objectID": "day12.html#problem",
-    "href": "day12.html#problem",
+    "objectID": "day13.html#hardware-solutions-atomicity",
+    "href": "day13.html#hardware-solutions-atomicity",
     "title": "CSC 4553",
-    "section": "Problem",
-    "text": "Problem\n\nTwo processes accessing a reservation system, where the number of open seats is tracked by a counter\n\nA: Releasing Seat\nB: Reserving Seat\n\nCounter at 10; Process A counter++ (10 -&gt; 11); Process B counter-- (10 -&gt; 9);\nWhat could go wrong?\nmov 0x8049a1c, %eax\nadd $0x1, %eax\nmov %eax, 0x8049a1c\n\nmov 0x8049a1c, %eax\nsub $0x1, %eax\nmov %eax, 0x8049a1c"
+    "section": "Hardware solutions: atomicity",
+    "text": "Hardware solutions: atomicity\n\nRecall the naïve bool lock: both threads read lock == FALSE in the gap before either one set it\nFix: let the hardware do the read and the write as one indivisible step, an atomic instruction\n\nNo other CPU can touch that memory location partway through\n\nWhy not just disable interrupts? (this was the original solution)\n\nOnly stops preemption on this CPU; other cores keep running\n\n\n\n\nTie straight back to the day 12 interleaving table: the bug was the gap between step 1 (test) and step 4 (set). An atomic instruction makes that gap impossible.\nHow the hardware does it: on modern x86 a lock-prefixed instruction holds the cache line exclusively for the duration (old CPUs locked the whole memory bus). Other cores trying to touch that line wait.\nDisabling interrupts: works on a uniprocessor (no preemption means no interleaving), but it’s privileged and does nothing to stop another core. That’s why it’s not the general answer anymore."
   },
   {
-    "objectID": "day12.html#race-conditions",
-    "href": "day12.html#race-conditions",
+    "objectID": "day13.html#atomic-instructions",
+    "href": "day13.html#atomic-instructions",
     "title": "CSC 4553",
-    "section": "Race conditions",
-    "text": "Race conditions\n\nIf interleaved, whoever goes last wins. Either way, 11 or 9 is an incorrect value. This is a race condition\nVery common in multi-programming environments: allocating disk blocks or memory pages, writing to a file, network buffers, etc.\nHow can we solve race conditions?\n\nMutual Exclusion (one at a time) on Critical Sections (the contention data/code)"
+    "section": "Atomic instructions",
+    "text": "Atomic instructions\n\nTwo classic ones:\n\ntest_and_set(&x): set x to true and return its old value\ncompare_and_swap(&x, expected, new): only if x == expected, set it to new; return the old value\n\nReal APIs differ: C11 atomic_compare_exchange_strong() returns a bool (did the swap happen?) and writes the old value back into expected\nSame information either way: old value == expected means the swap happened\n\nEither way, one instruction both checks “was it free?” and claims it\n\nLimit: works on a single word of memory, not on big operations\n\nAn “atomic B-tree update” instruction? No. \n\n\n\n\nWhy return the old value? After the call, x is always TRUE, so the new value tells you nothing. The old value answers “was it already taken?”\n\nOld value FALSE: it was free, and this instruction just claimed it. You’re in.\nOld value TRUE: someone else holds it; writing TRUE again changed nothing. Try again.\nHence while (test_and_set(&lock)); loops until it gets FALSE back. Reading the old value is the test, done in the same step as the set, so only one thread can ever get FALSE.\nSame idea for compare_and_swap: old value == expected means your swap happened; otherwise someone beat you.\n\nThe C-like test_and_set code on the next slide is a description of what the instruction does. In hardware it is one instruction, not three lines that could be interrupted."
   },
   {
-    "objectID": "day12.html#challenges-we-face",
-    "href": "day12.html#challenges-we-face",
+    "objectID": "day13.html#does-this-solution-meet-the-requirements",
+    "href": "day13.html#does-this-solution-meet-the-requirements",
     "title": "CSC 4553",
-    "section": "Challenges we face",
-    "text": "Challenges we face\n\nHow large should a critical section be?\nHow long can a process be in a critical section\n\nWhat happens if they crash while within a critical section?\n\nHow do we implement? Who enforces entrance into critical sections?"
+    "section": "Does this solution meet the requirements?",
+    "text": "Does this solution meet the requirements?\nbool test_and_set(bool *lock){\n  bool ret = *lock;\n  *lock = TRUE;\n  return ret;\n}\n\nlock = FALSE;\ndo{\n  while(test_and_set(&lock));\n  // CRITICAL SECTION\n  lock = FALSE;\n}while(true);\n\nMutual exclusion?\n\nYes\n\nProgress?\n\nYes: when the lock is released, a waiting process will acquire it\n\nBounded waiting?\n\nNo: an unlucky process could be endlessly passed over based on the scheduler’s decisions"
   },
   {
-    "objectID": "day12.html#beware-naïve-implementations",
-    "href": "day12.html#beware-naïve-implementations",
+    "objectID": "day13.html#mutex-locks",
+    "href": "day13.html#mutex-locks",
     "title": "CSC 4553",
-    "section": "Beware naïve implementations",
-    "text": "Beware naïve implementations\n\nWhy not use a simple bool?\nbool lock = FALSE;\ndo {\n  while (lock == TRUE);\n  lock = TRUE;\n  //CRITICAL SECTION\n  lock = FALSE;\n}while(TRUE);\nThis implementation requires TWO operations: a read (test) and a write (set) that must be atomic"
+    "section": "Mutex locks",
+    "text": "Mutex locks\n\nAtomic instruction-based solutions are complicated and generally not used by application programmers\nAny solution to the critical section problem requires a lock\n\nPeterson’s solution is an example (in software)\ntest_and_set() / compare_and_swap() are hardware implementations\n\nSimplest commonly used solution is mutex lock\n\nBoolean variable indicating if lock is available or not"
   },
   {
-    "objectID": "day12.html#critical-section-solution-requirements",
-    "href": "day12.html#critical-section-solution-requirements",
+    "objectID": "day13.html#mutex-locks-contd",
+    "href": "day13.html#mutex-locks-contd",
     "title": "CSC 4553",
-    "section": "Critical section solution requirements",
-    "text": "Critical section solution requirements\n\nMutual exclusion\nProgress\nBounded waiting"
+    "section": "Mutex locks (cont’d)",
+    "text": "Mutex locks (cont’d)\n\nProtect a critical section by\n\nFirst acquire() a lock\nThen release() the lock\n\nWhat’s going on under the hood?\nvoid lock(lock_t *lock) {\n  while (test_and_set(&lock-&gt;flag))\n  ; // spin-wait (do nothing)\n}\n\ntest_and_set() or compare_and_swap()"
   },
   {
-    "objectID": "day12.html#requirement-1-mutual-exclusion",
-    "href": "day12.html#requirement-1-mutual-exclusion",
+    "objectID": "day13.html#mutex-locks-contd-1",
+    "href": "day13.html#mutex-locks-contd-1",
     "title": "CSC 4553",
-    "section": "Requirement 1: Mutual exclusion",
-    "text": "Requirement 1: Mutual exclusion\n\n\n\nSafety property for the system::At most one process in the CS at any instant\nTraffic light: cross streets are never green at the same time. One double green, even for an instant, breaks it\nTo show it’s violated: find one interleaving that puts two processes in the CS\nTo show it holds: argue that no interleaving can (one lucky run proves nothing)\nThe naïve bool lock fails: both processes can read lock == FALSE before either one sets it\n\n\n\n\n\n\n\nStep\n\\(P_0\\)\n\\(P_1\\)\nlock\n\n\n\n\n1\nreads lock: F, leaves while\n\nF\n\n\n2\npreempted\nreads lock: F, leaves while\nF\n\n\n3\n\nlock = TRUE, enters CS\nT\n\n\n4\nresumes: lock = TRUE (no re-check)\nin CS\nT\n\n\n5\nenters CS\nin CS\nT\n\n\n\nBoth in the CS.\n\n\n\nSame race as the counter++ example at the start: read, get preempted, write based on what you read earlier.\nThe gap between the test (step 1) and the set (step 4) is the whole problem. Atomicity would close it.\nAt step 4, lock is already TRUE, so writing TRUE changes nothing. P0 never looks again; it already passed the test.\nStress the asymmetry: one bad interleaving disproves ME. Proving it takes a reasoning argument over all interleavings, which we’ll do for Peterson’s.\nCalling it a “safety” property sets up the contrast with Progress and Bounded Waiting, which are about “something good eventually happens” (liveness).\nTrivial solution that satisfies ME: never let anyone in. That’s why ME alone isn’t enough. Segue to Progress.\nTraffic light version: a light stuck red in every direction never shows two greens. Perfectly safe, totally useless."
+    "section": "Mutex locks (cont’d)",
+    "text": "Mutex locks (cont’d)\n\nCalls to acquire() and release() must be atomic\nBut this solution requires busy waiting\n\nThis type of mutex is therefore often called a spinlock\n\nThere are also mutexes that block instead of busy-waiting (e.g., those built on futexes), and some that do both\nNote: mutexes are owned by the thread that locks them. Only the thread that acquired the mutex can release it"
   },
   {
-    "objectID": "day12.html#requirement-2-progress",
-    "href": "day12.html#requirement-2-progress",
+    "objectID": "day13.html#spin-or-block",
+    "href": "day13.html#spin-or-block",
     "title": "CSC 4553",
-    "section": "Requirement 2: Progress",
-    "text": "Requirement 2: Progress\n\nLiveness property for the system: if the CS is empty and someone wants in, someone gets in\n\nTraffic light: if the intersection is empty and a car is waiting, some direction eventually gets a green. The all-red light fails this\n\nTwo parts to the rule:\n\nA process that isn’t trying to enter can’t keep anyone else out\nIf several processes are trying to enter, one of them gets in. They can’t all wait on each other forever\n\nTest for a violation: Is the CS empty? Is someone trying to get in? Are they stuck anyway?\n\nThree yeses means Progress is violated\n\n\n\n\nMutual exclusion alone is easy: never let anyone in. Progress is what rules that out.\nThe “finite time” part rules out schemes where the contenders keep deferring to each other forever. Don’t expand on it here: it’s the answer to the upcoming discussion."
+    "section": "Spin or block?",
+    "text": "Spin or block?\nFor each scenario, would you use a spinlock or a blocking mutex? Why?\n\n\nA kernel data structure protected by a lock held for ~50 CPU cycles\n\n\nA user-space cache entry lock held for ~100 µs while computing a result\n\n\nA file lock held for several seconds while the file is being edited\n\n\nA lock on a single-CPU system where only one thread can run at a time\n\n\n\nRule of thumb: spin if the expected wait is shorter than ~2 context switches (a context switch is roughly 1–10 µs depending on the system). Otherwise block.\n\n\nSpin. 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.\n\n\nBlock. 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.\n\n\nBlock (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.\n\n\nNever spin. On a uniprocessor, the lock holder cannot make progress while you’re spinning — you’re burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.\n\n\nKey insight: the break-even isn’t about the lock, it’s about the expected hold time relative to the cost of a context switch. Real systems often use adaptive mutexes that spin briefly, then block if the lock isn’t acquired quickly."
   },
   {
-    "objectID": "day12.html#progress-example-strict-alternation",
-    "href": "day12.html#progress-example-strict-alternation",
+    "objectID": "day13.html#futex-fast-path-slow-path",
+    "href": "day13.html#futex-fast-path-slow-path",
     "title": "CSC 4553",
-    "section": "Progress example: strict alternation",
-    "text": "Progress example: strict alternation\n\n\n// shared: int turn = 0;\n// P_i's code (j is the other)\ndo {\n  while (turn != i);\n  //CRITICAL SECTION\n  turn = j;\n  //REMAINDER\n} while (TRUE);\n\nMutual exclusion ✓: turn can’t be 0 and 1 at once\nCS empty ✓, \\(P_0\\) wants in ✓, \\(P_0\\) stuck ✓\nProgress ✗\n\n\n\n\n\n\n\nStep\n\\(P_0\\)\n\\(P_1\\)\nturn\n\n\n\n\n1\nin CS\nin remainder\n0\n\n\n2\nturn = 1\nin remainder\n1\n\n\n3\nwants in again\nin remainder\n1\n\n\n4\nstuck in while\nin remainder\n1\n\n\n\n\n\n\nP1 isn’t contending, but it holds the “key” (turn == 1), so it blocks P0 from its remainder section. That’s the first part of the rule.\nTraffic light version: a light that won’t switch back to north-south until a car crosses east-west. At 2am with no east-west traffic, the north-south car sits at a red light at an empty intersection forever.\nStrict alternation forces the pattern P0, P1, P0, P1… A process that’s faster or needs the CS more often gets held back by one that isn’t even contending.\nKeep turn in mind. Peterson’s reuses it, but only as a tie-breaker when both want in."
+    "section": "Futex: fast path, slow path",
+    "text": "Futex: fast path, slow path\n\nBlocking is safe but costly (a syscall every time); real systems want the common case to be cheap\nFutex (Fast Userspace muTEX, Linux 2002) makes that possible\nKey idea: most lock acquisitions are uncontended\n\nPut the lock variable in user-space memory\nTry to grab it with a single atomic instruction (e.g., cmpxchg)\nIf you win → done. No syscall, no kernel involvement (~10 ns)\n\nOnly on contention do you call into the kernel via the futex() syscall\n\nKernel adds you to a wait queue and puts you to sleep\nReleaser, if there are waiters, calls futex() to wake one up"
   },
   {
-    "objectID": "day12.html#requirement-3-bounded-waiting",
-    "href": "day12.html#requirement-3-bounded-waiting",
+    "objectID": "day13.html#futex-contd",
+    "href": "day13.html#futex-contd",
     "title": "CSC 4553",
-    "section": "Requirement 3: Bounded waiting",
-    "text": "Requirement 3: Bounded waiting\n\nLiveness property for each process: once \\(P_i\\) asks to enter, only a bounded number \\(k\\) of other entries can happen before \\(P_i\\) gets its turn\n\nProgress says someone gets in. Bounded waiting says you eventually get in\nThe bound is a count of entries, not a time. We can’t assume anything about CPU speed\n\nTraffic light: a car on the side street gets a green within \\(k\\) light cycles. A light that always favors the busy main road starves the side street, even though traffic is always moving\nViolating it means starvation\nFix idea: take a number (FIFO), like a deli counter. Then \\(k = n - 1\\)\n\n\n\nDeli counter: without tickets, whoever pushes hardest gets served, and a polite customer can wait forever even though the counter is always busy.\nFor two processes the best possible bound is k = 1: once I’m waiting, you get in at most once more before I do. We’ll show Peterson’s achieves this."
+    "section": "Futex (cont’d)",
+    "text": "Futex (cont’d)\n\nThis is why pthread_mutex_t on Linux is cheap when uncontended — it’s built on futexes\nSame story for std::mutex in C++ and most modern language runtimes\nQuestion: why can’t you build a blocking mutex purely in user space?\n\nBlocking an OS thread — taking it off the run queue — is a kernel operation by definition\nOnly the kernel can decide which thread runs on a CPU\nFutex is the minimum-syscall way to ask the kernel for that service"
   },
   {
-    "objectID": "day12.html#bounded-waiting-example-p_0-always-wins",
-    "href": "day12.html#bounded-waiting-example-p_0-always-wins",
+    "objectID": "day13.html#hidden-costs-of-locking",
+    "href": "day13.html#hidden-costs-of-locking",
     "title": "CSC 4553",
-    "section": "Bounded waiting example: \\(P_0\\) always wins",
-    "text": "Bounded waiting example: \\(P_0\\) always wins\n\n\n\nSuppose a lock (whatever its implementation) always lets \\(P_0\\) win a tie\nMutual exclusion ✓\nProgress ✓: the CS is never idle while someone waits\nBounded waiting ✗: \\(P_1\\) can lose every time\n\n\n\n\n\n\n\nTime\n\\(P_0\\)\n\\(P_1\\)\n\n\n\n\n1\nin CS\nrequests entry\n\n\n2\nexits, re-requests\nwaiting\n\n\n3\nwins tie, in CS\nwaiting\n\n\n4\nexits, re-requests\nwaiting\n\n\n5\nwins tie, in CS\nwaiting\n\n\n…\n…\nwaiting forever\n\n\n\n\n\n\nAsk: does this violate Progress? No. The CS is in use the whole time, so the system is making progress. Only P1 isn’t. That’s the difference between the two requirements.\nTraffic light version: P0 is the main road with a steady stream of cars, P1 is the side street. Cars are always crossing (Progress ✓), but the side-street car never gets its green (Bounded waiting ✗).\nPreview: the plain test_and_set spinlock later today has this exact problem. Let students find it themselves on that slide."
+    "section": "Hidden costs of locking",
+    "text": "Hidden costs of locking\nIn 1997, NASA’s Mars Pathfinder started having mysterious resets on Mars. From Earth, engineers saw the system repeatedly rebooting for no obvious reason. Not ideal when your computer is ~190 million km away.\nThe cause: priority inversion.\n\nLow-priority task holds a mutex\nHigh-priority task needs it, so it blocks\nMedium-priority task (doesn’t need the mutex) keeps preempting the low-priority one\nLow never runs, so it never releases; high is starved\nA watchdog sees the stall as a fault and resets the system. Over and over.\n\n\n\nThe OS was VxWorks; the mutex had been created with priority inheritance turned off. Hold that detail for the next slide’s fix."
   },
   {
-    "objectID": "day12.html#progress-vs.-bounded-waiting",
-    "href": "day12.html#progress-vs.-bounded-waiting",
+    "objectID": "day13.html#priority-inversion",
+    "href": "day13.html#priority-inversion",
     "title": "CSC 4553",
-    "section": "Progress vs. bounded waiting",
-    "text": "Progress vs. bounded waiting\n\n\n\n\n\n\n\n\n\nProgress\nBounded waiting\n\n\n\n\nProtects\nthe system\neach process\n\n\nPromise\nsomeone gets in\nyou get in\n\n\nTraffic light\nan empty intersection with a waiting car doesn’t stay red\nthe side street gets a green within \\(k\\) cycles\n\n\nFailure\nCS sits empty while processes wait (deadlock)\nCS stays busy, but one process never gets a turn (starvation)\n\n\n\n\nQuick test: is the CS being used?\n\nEmpty and someone’s stuck → Progress violated\nBusy, but the same process keeps losing → Bounded waiting violated\n\n\n\n\nProgress is about the light working at all. Bounded waiting is about the light being fair.\nNeither implies the other: “P0 always wins” has Progress but not Bounded waiting. A deadlocked lock fails Progress, and bounded waiting is moot because nobody gets in.\nAsk students to classify: (a) both processes spin forever with the CS empty, (b) a fast process keeps grabbing the lock ahead of a slow one."
+    "section": "Priority inversion",
+    "text": "Priority inversion\n\nAny ideas on how to fix?\n\nPriority inheritance: low priority processes are temporarily given priorities that match those waiting on them\n\n\n\n\nPathfinder epilogue: JPL reproduced the bug on a ground replica, then uploaded a patch that turned priority inheritance on for that mutex. The resets stopped."
   },
   {
-    "objectID": "day12.html#discussion-break-this-lock",
-    "href": "day12.html#discussion-break-this-lock",
+    "objectID": "day13.html#section",
+    "href": "day13.html#section",
     "title": "CSC 4553",
-    "section": "Discussion: Break this lock",
-    "text": "Discussion: Break this lock\n\nThis is \\(P_i\\)’s code (swap i and j for \\(P_j\\)). Which of the three requirements does it meet, and which does it violate?\nHow would you fix it?\n\n// shared: bool flag[2] = {FALSE, FALSE};\ndo {\n  flag[i] = TRUE;\n  while (flag[j]);\n  //CRITICAL SECTION\n  flag[i] = FALSE;\n  //REMAINDER\n} while (TRUE);\n\n\nMutual exclusion holds: to be in the CS, \\(P_i\\) must have seen flag[j] == FALSE after setting its own flag, so both can’t get in.\nProgress fails (deadlock): \\(P_i\\) sets flag[i] = TRUE, context switch, \\(P_j\\) sets flag[j] = TRUE. Now both spin forever on while (flag[other]) and nobody is in the CS.\nBounded waiting is moot once it deadlocks.\nIf someone says it violates mutual exclusion: have them try to build the interleaving. Setting the flag before testing is what saves it. Contrast with the naive bool lock, which tests before setting.\n\nFixes students usually propose, in order:\n\nCheck first, then raise your flag. That’s the naive bool lock again: both see the other’s flag down, both raise, both enter. Fixes Progress, breaks ME.\nBack off: if the other flag is up, lower yours, wait, raise it again. Both can do this in lockstep forever: raise, see, lower, raise… That’s livelock. Nobody is blocked, nobody gets in, so Progress still fails. Random backoff makes it unlikely, not impossible.\nAdd a tie-breaker turn, checked only when both flags are up: flag[i] = TRUE; turn = j; while (flag[j] && turn == j);\n\nOther process not trying → flag[j] is FALSE, walk straight in (strict alternation failed this)\nBoth trying → turn holds one value, so exactly one gets in; the last writer waits (flags-only failed this)\n\n\nBridge to Peterson’s: strict alternation used only turn and failed when one process wasn’t trying. This lock uses only flags and fails when both are trying. Peterson’s uses both: flags say who wants in, turn breaks the tie."
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day12.html#petersons-solution",
-    "href": "day12.html#petersons-solution",
+    "objectID": "day13.html#semaphores",
+    "href": "day13.html#semaphores",
     "title": "CSC 4553",
-    "section": "Peterson’s solution",
-    "text": "Peterson’s solution\n\nTwo processes: \\(P_i\\) and \\(P_j\\)\nTwo shared data items: int turn; bool flag[2];\n// P_i's code (j is the other)\ndo {\n  flag[i] = TRUE;                // I want to enter critical section\n  turn = j;                      // let Pj go first if it wants\n  while (flag[j] && turn == j);  // busy wait\n  //CRITICAL SECTION\n  flag[i] = FALSE;               // I'm leaving critical section\n  //REMAINDER\n}while(TRUE);\n\nturn is a tie-breaker: if both want in, the last one to write it lets the other go first\nif flag[i] == true → \\(P_i\\) is ready for the critical section\n\nTo enter: \\(P_i\\) sets flag[i] = true and turn = j\n\ni.e., \\(P_i\\) demurs to \\(P_j\\); if they are both ready turn will get set to?\n\nWhoever runs last sets the turn to the other process"
+    "section": "Semaphores",
+    "text": "Semaphores\n\n\n\nSynchronization tool that provides more sophisticated ways (than mutex locks) for processes to synchronize their activities\nSemaphore S: integer variable\nCan only be accessed via two atomic operations\n\nwait() and signal()\nOriginally called P() and V() (because, Dutch)\n\nDo not have ownership, any thread can signal (increment) or wait (decrement)\n\n\n\n\nwait(S) {\n    while (S &lt;= 0)\n       ; // busy\n    S--;\n}\n\nsignal(S) {\n    S++;\n}"
   },
   {
-    "objectID": "day12.html#petersons-solution-mutual-exclusion",
-    "href": "day12.html#petersons-solution-mutual-exclusion",
+    "objectID": "day13.html#semaphores-contd",
+    "href": "day13.html#semaphores-contd",
     "title": "CSC 4553",
-    "section": "Peterson’s solution: mutual exclusion",
-    "text": "Peterson’s solution: mutual exclusion\n\n// P_i's code (j is the other)\ndo {\n  flag[i] = TRUE;                // I want to enter critical section\n  turn = j;                      // let Pj go first if it wants\n  while (flag[j] && turn == j);  // busy wait\n  //CRITICAL SECTION\n  flag[i] = FALSE;               // I'm leaving critical section\n  //REMAINDER\n}while(TRUE);\n\n\nCan both processes be in the CS at the same time?\n\n\\(P_i\\) gets past its while only if flag[j] == FALSE or turn == i\nSuppose both are in the CS. Look at who wrote turn last, say \\(P_i\\) (it wrote turn = j)\n\n\\(P_j\\) already set flag[j] = TRUE before its own turn = i, and nobody touches turn again\nSo \\(P_i\\) sees flag[j] == TRUE && turn == j and spins until \\(P_j\\) leaves. Contradiction\n\nBoth say “after you”; the last one to say it is the one who waits\n\n\n\nConcrete trace to draw on the board (both want in at once):\n\nP0: flag[0] = T\nP1: flag[1] = T\nP0: turn = 1\nP1: turn = 0 ← last writer\nP0 checks flag[1] && turn == 1 → T && F → enters\nP1 checks flag[0] && turn == 0 → T && T → spins\n\nSwap the order of steps 3 and 4 and P1 enters instead. Either way exactly one gets in. If only one wants in, the other’s flag is FALSE and it walks straight through."
+    "section": "Semaphores (cont’d)",
+    "text": "Semaphores (cont’d)\n\n\n\nBinary semaphore: integer value can range only between 0 and 1\n\nFunctionally similar to a mutex, but without ownership — any thread can signal it\n\n\n\n\n\ndo{\n  wait(mutex);\n  //CS\n  signal(mutex);\n}while(TRUE);\n\n\nCounting semaphore: integer value can range over an unrestricted domain\n\nWhen would this make sense?\n\nProtect a finite set of resources rather than a single one (e.g., you have a pool of shared db connections)\nInitialize S to the number of resources\nDecrement S each time someone grabs a resource, increment when they release"
   },
   {
-    "objectID": "day12.html#petersons-solution-progress",
-    "href": "day12.html#petersons-solution-progress",
+    "objectID": "day13.html#enforce-the-order",
+    "href": "day13.html#enforce-the-order",
     "title": "CSC 4553",
-    "section": "Peterson’s solution: progress",
-    "text": "Peterson’s solution: progress\n\n// P_i's code (j is the other)\ndo {\n  flag[i] = TRUE;                // I want to enter critical section\n  turn = j;                      // let Pj go first if it wants\n  while (flag[j] && turn == j);  // busy wait\n  //CRITICAL SECTION\n  flag[i] = FALSE;               // I'm leaving critical section\n  //REMAINDER\n}while(TRUE);\n\n\nIf the CS is empty and someone wants in, does someone get in?\n\n\\(P_j\\) not trying: flag[j] is FALSE, so \\(P_i\\) walks straight in (strict alternation failed this)\nBoth trying: turn is either i or j, so one of the two while conditions is false and that process enters (flags-only deadlocked here)"
+    "section": "Enforce the order",
+    "text": "Enforce the order\nSemaphore can also be used to impose order…\nThree threads each loop forever: one prints A, one prints B, one prints C.\nUsing only semaphores, guarantee the output is always ABCABCABC...\n\nHow many semaphores do you need?\nWhat are their initial values?\nWhere do the wait() and signal() calls go?\n\n\nOne semaphore per thread, chained in a ring — each thread waits on its own semaphore and signals the next one’s:\nsem sA = 1, sB = 0, sC = 0;\n\nTA: while(1){ wait(sA); print(\"A\"); signal(sB); }\nTB: while(1){ wait(sB); print(\"B\"); signal(sC); }\nTC: while(1){ wait(sC); print(\"C\"); signal(sA); }\n\nInitial values matter. Exactly one semaphore starts at 1 — that picks who goes first. Common mistake: all initialized to 0 → every thread blocks on its first wait() → deadlock. Another: all initialized to 1 → three tokens circulate, so the order is never enforced.\nThe wrap-around (TC signals sA) is what makes it repeat; each signal(next) → wait(next) pair is one link in the chain.\nWhy not mutexes? Because this is signaling between threads, not mutual exclusion — and mutexes have ownership.\n\nLook at who calls what: TA calls signal(sB) but never called wait(sB). The wait() and signal() on each semaphore happen in different threads.\nA mutex is owned by the thread that locked it — only that thread may unlock it. The lock/unlock pair must bracket a critical section within one thread.\nTry it anyway: to make TB block at the start, mB must already be locked. Who locks it? Say main does. Then TA must unlock mB to let TB go — but TA doesn’t own it. With pthreads that’s undefined behavior for a default mutex, or EPERM for an error-checking mutex. Either way, it’s not a valid use.\nSemaphores have no owner: the value is just a counter, and any thread can increment it. That’s exactly what “pass the token to the next thread” needs.\nSemaphores also remember a signal: if TA calls signal(sB) before TB reaches wait(sB), the value stays at 1 and TB goes right through. Nothing is lost.\nIf you only had mutexes, the correct tool is a mutex + condition variable + a shared turn variable (each thread waits until turn is its letter, prints, sets turn to the next letter, and broadcasts). That works, but it’s more code — a good callback to condition variables from day 11.\n\nInvariant to point out: at any moment the sum sA + sB + sC is at most 1 — a single “token” is passed around the ring.\n\nStretch if time: make it print ABBCABBC... Multiple valid answers (e.g., TB loops twice per turn, or two B threads chained B1→B2). Good for discussion — no single right answer."
   },
   {
-    "objectID": "day12.html#petersons-solution-bounded-waiting",
-    "href": "day12.html#petersons-solution-bounded-waiting",
+    "objectID": "day13.html#blocking-semaphores",
+    "href": "day13.html#blocking-semaphores",
     "title": "CSC 4553",
-    "section": "Peterson’s solution: bounded waiting",
-    "text": "Peterson’s solution: bounded waiting\n\n// P_i's code (j is the other)\ndo {\n  flag[i] = TRUE;                // I want to enter critical section\n  turn = j;                      // let Pj go first if it wants\n  while (flag[j] && turn == j);  // busy wait\n  //CRITICAL SECTION\n  flag[i] = FALSE;               // I'm leaving critical section\n  //REMAINDER\n}while(TRUE);\n\n\nOnce \\(P_i\\) is waiting, how many times can \\(P_j\\) get in first?\n\nAt most once. To get back in, \\(P_j\\) must set turn = i, which lets \\(P_i\\) through and makes \\(P_j\\) wait\n\n\n\n\nContrast with “P0 always wins”: there the winner re-requested and won the tie again. In Peterson’s, re-requesting means saying “after you” again, so the waiting process wins.\nTraffic light version: once the side-street car is waiting, the main road gets at most one more green.\nBounded waiting trace: P_i is spinning (flag[j] T, turn == j). P_j exits, sets flag[j] = F (P_i may slip in right here). P_j wants back in: flag[j] = T, turn = i. Now P_i’s condition is T && F → enters; P_j’s is T && T → spins."
+    "section": "Blocking semaphores",
+    "text": "Blocking semaphores\n\n\n\nWe add sleep() and wakeup() to the underlying implementation\nCall to wait, and semaphore not available, process is blocked with sleep() (wait state) and placed on a waiting queue\nBlocked processes are notified of an available semaphore by the wakeup() operation\n\ngoes from waiting to ready\nAble to achieve bounded wait and progress with FIFO queue\n\n\n\n\n\nwait(semaphore *S) {\n   S-&gt;value--;\n   if (S-&gt;value &lt; 0) {\n      add process to S-&gt;list;\n      sleep();\n   }\n}\n\nsignal(semaphore *S) {\n   S-&gt;value++;\n   if (S-&gt;value &lt;= 0) {\n      remove P from S-&gt;list;\n      wakeup(P);\n   }\n}"
   },
   {
-    "objectID": "day12.html#petersons-solution-contd",
-    "href": "day12.html#petersons-solution-contd",
+    "objectID": "day13.html#mutexes-vs.-semaphores",
+    "href": "day13.html#mutexes-vs.-semaphores",
     "title": "CSC 4553",
-    "section": "Peterson’s solution (cont’d)",
-    "text": "Peterson’s solution (cont’d)\n// P_i's code (j is the other)\ndo {\n  flag[i] = TRUE;                // I want to enter critical section\n  turn = j;                      // let Pj go first if it wants\n  while (flag[j] && turn == j);  // busy wait\n  //CRITICAL SECTION\n  flag[i] = FALSE;               // I'm leaving critical section\n  //REMAINDER\n}while(TRUE);\n\nDo you see any issues with this solution?\n\nLimitation: Only works for two processes\nModern architectures may also break this solution\n\nProcessors and/or compilers can reorder reads and writes that have no dependencies\nMultithreaded applications could lead to issues"
+    "section": "Mutexes vs. semaphores",
+    "text": "Mutexes vs. semaphores\n\nMutexes are generally lighter weight / faster\nSemaphores can support multiple instances\nSemaphores don’t have the ownership limitations of mutexes"
   },
   {
-    "objectID": "day12.html#section",
-    "href": "day12.html#section",
+    "objectID": "day13.html#choose-your-primitive",
+    "href": "day13.html#choose-your-primitive",
+    "title": "CSC 4553",
+    "section": "Choose your primitive",
+    "text": "Choose your primitive\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 1: You need to protect a critical section where only one thread should execute at a time, and the critical section is expected to be held for a relatively long duration.\n\nBlocking mutex (e.g., pthread_mutex_t, built on a futex)\n\nScenario 2: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.\n\nCounting semaphore"
+  },
+  {
+    "objectID": "day13.html#choose-your-primitive-contd",
+    "href": "day13.html#choose-your-primitive-contd",
+    "title": "CSC 4553",
+    "section": "Choose your primitive (cont’d)",
+    "text": "Choose your primitive (cont’d)\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 3: You need to increment a shared counter frequently, and the operation is very quick.\n\nAtomic instruction\n\nScenario 4: You need to protect a critical section where only one thread should execute at a time, but the critical section is expected to be held for a very short duration.\n\nSpin lock mutex"
+  },
+  {
+    "objectID": "day13.html#beware-mistakes-are-easy-to-make",
+    "href": "day13.html#beware-mistakes-are-easy-to-make",
+    "title": "CSC 4553",
+    "section": "Beware: mistakes are easy to make",
+    "text": "Beware: mistakes are easy to make\n\nIncorrect use of semaphore operations\n\nwrong order: signal(mutex) … wait(mutex)\nrepeating: wait(mutex) … wait(mutex)\nOmitting of wait(mutex) and/or signal(mutex)\n\nBe careful"
+  },
+  {
+    "objectID": "day13.html#condition-variables",
+    "href": "day13.html#condition-variables",
+    "title": "CSC 4553",
+    "section": "Condition variables",
+    "text": "Condition variables\n\nPaired with a mutex to let threads wait for a condition rather than spin\nx.wait(): calling thread releases the mutex and suspends until signaled; it reacquires the mutex before returning\nx.signal(): wakes one waiter (if any); no effect if no waiters\nx.broadcast(): wake all waiters — useful when multiple threads may now be able to proceed\nNot like a semaphore: a semaphore remembers a signal (the count stays incremented, so a later wait() goes right through); a CV signal with no one waiting is simply lost\nGood fit for producer-consumer and any case where threads must sleep until a resource / condition is ready"
+  },
+  {
+    "objectID": "day13.html#section-1",
+    "href": "day13.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
