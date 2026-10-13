@@ -1,0 +1,547 @@
+---
+title: CSC 4553
+subtitle: Fall 2026 - Day 14
+format:
+  clean-revealjs:
+    self-contained: true
+    incremental: true
+    margin: 0.15
+    include-in-header:
+      text: |
+        <style>.cell-output-display svg { max-width: 100% !important; height: auto; }</style>
+---
+
+## Admin
+:::{.nonincremental}
+- Lab due Friday, 18:00
+- Quiz due Monday, 18:00
+- Sign up for code review slots [https://calendar.app.google/XGVki6gTCicVj8BU9](https://calendar.app.google/XGVki6gTCicVj8BU9)
+:::
+
+# Deadlocks {background-color="#40666e"}
+
+## Questions to consider
+:::{.nonincremental}
+- What are the four necessary conditions for deadlock, and why must all four be present simultaneously?
+- How can Resource Allocation Graphs help us visualize and understand when deadlock might occur?
+- Why is a cycle necessary but not sufficient for deadlock when there are multiple instances of a resource?
+:::
+
+## Deadlocks
+- If we're not careful about dependencies, we might create pathologies that lead to deadlock
+  - Like race conditions, may only happen sometimes, making them hard to identify and debug
+- Example: Three processes, three resources of the same type, each process requires two resources to make progress
+  - This can happen across a network as well, which is particularly hard to diagnose
+- Can we [detect and resolve]{.alert} these situations? Can we [prevent]{.alert} them?
+
+## Deadlock example
+- Classic example: Thread1 holds lock L1 and is waiting for lock L2. Thread2 holds L2 and is waiting for L1
+  ```
+    Thread 1: 			            Thread 2:
+    pthread_mutex_lock(L1); 		pthread_mutex_lock(L2);
+    pthread_mutex_lock(L2); 		pthread_mutex_lock(L1);
+  ```
+
+## Deadlock characteristics
+- Definition: A set of processes are deadlocked if each process in the set is waiting for an event that only another process in the set can cause.
+  - [Resource deadlock]{.alert} is the most common (and what we'll focus on)
+
+## Conditions for deadlock
+- Four necessary conditions (simultaneous):
+  - [Mutual exclusion]{.alert}: At least one resource can only be held by one process at a time; this can result in other processes waiting for that resource
+  - [Hold and wait]{.alert}: A process must be holding at least one resource while waiting for other resources (held by other processes)
+  - [No preemption]{.alert}: Resources can only be released voluntarily by a process; Resources cannot be revoked
+  - [Circular wait]{.alert}: A set of $n$ waiting processes $\{P_0, \dots, P_{n-1}\}$ such that $P_i$ is waiting for resources held by $P_{i+1 \bmod{n}}$
+- All must be met
+
+## Deadlock conditions are design choices
+
+
+| Condition | The question to ask | Answer that allows deadlock |
+|---|---|---|
+| Mutual exclusion | Can two processes use this resource at the same time? | No: one owner at a time (e.g., a mutex) |
+| Hold and wait | Can a process keep what it has while it waits for more? | Yes: grab one lock, then wait for the next |
+| No preemption | Can the OS take a resource away from a process? | No: only the owner can give it back |
+| Circular wait | Can processes request resources in any order? | Yes: T1 locks A then B, T2 locks B then A |
+
+- Each condition exists because of a rule the system chose. Pick a different rule, and the condition disappears.
+- Change the answer to **any one** question and deadlock becomes impossible
+
+::: {.notes}
+The bank transfer example later makes this concrete: mutexes are exclusive, it holds from->lock while waiting for to->lock, nothing can take a mutex away, and the lock order depends on argument order. All four answers are "deadlock allowed."
+
+The last column sets up the prevention section: each prevention technique flips one answer.
+:::
+
+## Deadlock modeling
+:::: {.columns}
+::: {.nonincremental}
+- [Resource Allocation Graph]{.alert}: a directed graph; processes (circles) and resources (squares) are nodes
+  - Request edge: thread → resource
+  - Assignment edge: resource → thread
+
+::: {.incremental}
+- Cycles in a graph indicate possible deadlock
+  - One instance per resource: a cycle is necessary and sufficient
+  - **Multiple instances: a cycle is necessary but not sufficient**
+:::
+
+:::
+::::
+
+
+## Example: the bank transfer
+:::: {.columns}
+::: {.column width="60%" .nonincremental}
+```{.c}
+void transfer(account *from, account *to, int amt) {
+  pthread_mutex_lock(&from->lock);
+  pthread_mutex_lock(&to->lock);
+  from->balance -= amt;
+  to->balance   += amt;
+  pthread_mutex_unlock(&to->lock);
+  pthread_mutex_unlock(&from->lock);
+}
+```
+```
+Thread 1: transfer(&alice, &bob, 50);
+Thread 2: transfer(&bob, &alice, 20);
+```
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="38%" .nonincremental}
+- [Think]{.alert}: Can this deadlock? Write down an interleaving that causes it.
+- [Discuss]{.alert}: Together, draw the RAG at the moment it's stuck. Find the line(s) of code responsible for **each** of the four conditions.
+:::
+::::
+
+::: {.notes}
+Timing: ~2 min think, ~4 min pair, ~5 min share.
+
+Interleaving: T1 locks alice, T2 locks bob, T1 blocks on bob, T2 blocks on alice.
+
+RAG: alice -> T1 (held), T1 -> bob (request), bob -> T2 (held), T2 -> alice (request). One instance each, so the cycle is sufficient.
+
+Conditions mapped to code:
+- Mutual exclusion: pthread mutexes — only one owner.
+- Hold and wait: holding from->lock at line 2 while blocking at line 3.
+- No preemption: nothing can take a mutex away from a thread; only the owner unlocks.
+- Circular wait: lock order depends on argument order, so two callers can acquire in opposite orders.
+
+Point out that the code looks perfectly reasonable and passes most tests — the window between the two lock calls is tiny. Callback to "like race conditions, may only happen sometimes."
+:::
+
+## Push it further
+:::{.nonincremental}
+With others, decide **deadlock or not** for each, and justify with the four conditions or the RAG:
+
+1. Three threads: `transfer(A,B)`, `transfer(B,C)`, `transfer(C,A)`
+2. One thread: `transfer(&alice, &alice, 10)`
+3. What is the **smallest** change to `transfer()` that makes the original two-thread case safe?
+:::
+
+::: {.notes}
+1. Yes — a 3-cycle. Generalizes: any cycle of transfers can deadlock. Good moment to ask "how would you even find this in testing?"
+2. Trick question — it hangs, but it is **not** a deadlock by our definition. The thread locks alice, then blocks trying to lock alice again (hangs forever for PTHREAD_MUTEX_NORMAL; undefined behavior for PTHREAD_MUTEX_DEFAULT). Our definition requires waiting on an event only *another* process in the set can cause, and circular wait needs a set of waiting processes — here there's no one else. People casually call this "self-deadlock," but it's a plain programming bug. Use it to make students apply the definition rather than "it's stuck, so it's deadlock." Fix: check from == to.
+3. Always lock in a global order, e.g., lower account ID (or lower address) first. That breaks circular wait — sets up the next section. Don't fully explain yet; let them propose it and say "hold that thought."
+:::
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
+# Handling deadlocks {background-color="#40666e"}
+
+## Questions to consider
+:::{.nonincremental}
+- What are the approaches to handling deadlock? How practical is each? How do they differ in approach?
+- How does deadlock avoidance differ from deadlock prevention? What techniques do we implement for deadlock avoidance?
+- What are the trade-offs between detecting/recovering from deadlock versus preventing or avoiding it, and when is detection practical?
+:::
+
+## How should the OS handle deadlocks?
+- OS can [prevent]{.alert} deadlock: ensure deadlocks can never occur (by preventing one of the deadlock requirements from occurring)
+- OS can [avoid]{.alert} deadlock: like prevention, but given more information about a process's resource needs
+- OS can [detect]{.alert} deadlock: allow system to deadlock, detect and recover
+- OS can [do nothing]{.alert}, and let applications handle it
+  - [Ostrich Algorithm]{.alert}: head in sand; wait
+
+## Deadlock prevention
+:::{.nonincremental}
+- Remember, we just have to break one of these to prevent deadlock
+  - Mutual exclusion
+  - Hold and wait
+  - No preemption
+  - Circular wait
+:::
+
+- Any ideas?
+
+:::{.notes}
+Example Strategies:
+- Dynamic Resource Allocation: Implement algorithms that dynamically adjust resource allocation based on current system state and process priorities.
+- Timeout Mechanism: Introduce timeouts for resource requests, forcing processes to release resources if they cannot acquire all necessary resources within a certain timeframe.
+- Resource Hierarchies: Establish a hierarchy for resource allocation, ensuring that processes request resources in a predefined order to avoid circular wait conditions.
+- Predictive Analysis: Use machine learning to predict potential deadlock scenarios based on historical data and proactively adjust resource allocation.
+
+Follow-Up Questions:
+- How does your strategy address mutual exclusion?
+- Can your strategy be implemented in real-world systems? If so, how?
+- What challenges might arise when implementing your strategy?
+:::
+
+## Attacking mutual exclusion
+- Make resources sharable so they aren't held by only one process at a time; some resources are naturally sharable (e.g., read-only files), but preventing mutual exclusion is fundamentally difficult as so many resources are non-sharable: printers, writable files, mutex locks, etc.
+  - Spoolers can sidestep this for some resources (e.g., a print spooler accepts jobs so no one "owns" the printer directly)
+
+## Attacking hold and wait
+- When a process requests a resource, it cannot be holding any other resources
+- A process must request **all** of its resources at one time
+- Example, treat group of lock acquisitions like a critical section and surround with a mutex
+
+  ```{.c}
+  pthread_mutex_lock(global_lock);
+  pthread_mutex_lock(L1);
+  pthread_mutex_lock(L2);
+  ...
+  pthread_mutex_unlock(global_lock);
+  ```
+- See any downsides?
+  - Must know all needed locks a priori
+  - Will likely decrease concurrency
+
+## Attacking no preemption
+- If a process is holding some resources and requests another that cannot be immediately allocated, then all resources held are released
+- Process is restarted only when it can regain its old resources plus the new
+- Downsides?
+  - Not all resources are preempt-able
+  - Starvation is possible
+
+## Attacking circular wait
+- How could you prevent by focusing on the circular wait requirement?
+- Impose a total ordering of all resource types
+  - For example, resource types R1, R2, ..., Rn have ordering R1 < R2 < ... < Rn
+  - A process that needs multiple resources must request them in increasing order of enumeration
+- Downsides?
+  - May be difficult to impose a meaningful ordering
+  - May lead to reduced concurrency
+
+## Fix the transfer
+:::: {.columns}
+::: {.column width="60%" .nonincremental}
+```{.c}
+void transfer(account *a, account *b, int amt) {
+  pthread_mutex_lock(&a->lock);
+  pthread_mutex_lock(&b->lock);
+  a->balance -= amt;
+  b->balance += amt;
+  pthread_mutex_unlock(&b->lock);
+  pthread_mutex_unlock(&a->lock);
+}
+```
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="38%" .nonincremental}
+- [Think]{.alert}: Rewrite `transfer()` so it can never deadlock. Which condition did you break?
+- [Discuss]{.alert}: Compare with a neighbor. Then extend it: `transfer_many(account *accts[], int n)` must lock all `n` accounts before moving money.
+:::
+::::
+
+::: {.notes}
+Timing: ~2 min think, ~4 min pair, ~3 min share.
+
+Fix: break circular wait by locking in a global order — every account gets a unique id (or compare addresses):
+
+```c
+void transfer(account *a, account *b, int amt) {
+  account *first  = (a->id < b->id) ? a : b;
+  account *second = (a->id < b->id) ? b : a;
+  pthread_mutex_lock(&first->lock);
+  pthread_mutex_lock(&second->lock);
+  a->balance -= amt;
+  b->balance += amt;
+  pthread_mutex_unlock(&second->lock);
+  pthread_mutex_unlock(&first->lock);
+}
+```
+
+- Unlock order doesn't matter for deadlock — only acquisition order does. Worth asking.
+- a == b: still self-blocks on the second lock. Need an early check (callback to "push it further" #2).
+- transfer_many: sort accts by id, then lock in order (and skip duplicates). Same idea the Linux filemap.c comment on the summary slide documents.
+- Alternative answers to accept and discuss: a single global lock (breaks hold and wait — correct but serializes every transfer); trylock-and-back-off (breaks no preemption — works, but can livelock).
+:::
+
+## Deadlock prevention summary
+- Which approach is best?
+  - Attacking mutual exclusion is generally not feasible
+  - Attacking hold and wait is wasteful and requires prescience
+  - Attacking no preemption is difficult due to non-preemptable resources
+  - Attacking circular wait is practical but may reduce concurrency - often the best choice and [most used](https://github.com/torvalds/linux/blob/f286757b644c226b6b31779da95a4fa7ab245ef5/mm/filemap.c#L80-L126)
+
+## Dining philosophers
+:::: {.columns}
+::: {.column width="58%" .nonincremental}
+- Five philosophers around a table, one fork between each pair
+- To eat, a philosopher needs **both** adjacent forks
+
+```{.c}
+void philosopher(int i) {
+  while (1) {
+    think();
+    lock(fork[i]);            // left
+    lock(fork[(i + 1) % 5]);  // right
+    eat();
+    unlock(fork[(i + 1) % 5]);
+    unlock(fork[i]);
+  }
+}
+```
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="40%"}
+```{dot}
+//| fig-width: 4
+digraph {
+  graph [layout=neato, bgcolor=transparent]
+  node  [fontname="Helvetica", fontsize=16]
+  P0 [label="P0", shape=circle, width=0.75, fixedsize=true, pos="0.00,1.70!"]
+  F0 [label="F0", shape=box, width=0.5, height=0.4, fixedsize=true, style=filled, fillcolor="#eeeeee", pos="-0.88,1.21!"]
+  P1 [label="P1", shape=circle, width=0.75, fixedsize=true, pos="1.62,0.53!"]
+  F1 [label="F1", shape=box, width=0.5, height=0.4, fixedsize=true, style=filled, fillcolor="#eeeeee", pos="0.88,1.21!"]
+  P2 [label="P2", shape=circle, width=0.75, fixedsize=true, pos="1.00,-1.38!"]
+  F2 [label="F2", shape=box, width=0.5, height=0.4, fixedsize=true, style=filled, fillcolor="#eeeeee", pos="1.43,-0.46!"]
+  P3 [label="P3", shape=circle, width=0.75, fixedsize=true, pos="-1.00,-1.38!"]
+  F3 [label="F3", shape=box, width=0.5, height=0.4, fixedsize=true, style=filled, fillcolor="#eeeeee", pos="0.00,-1.50!"]
+  P4 [label="P4", shape=circle, width=0.75, fixedsize=true, pos="-1.62,0.53!"]
+  F4 [label="F4", shape=box, width=0.5, height=0.4, fixedsize=true, style=filled, fillcolor="#eeeeee", pos="-1.43,-0.46!"]
+}
+```
+:::
+::::
+
+## Break one condition
+:::: {.columns}
+::: {.column width="52%" .nonincremental}
+- [Think]{.alert}: How can the philosophers deadlock? Point to each of the four conditions in the code.
+- [Discuss]{.alert}: For each condition, explain how it can be broken. Change the code (or the rules) so deadlock is impossible.
+  - Mutual exclusion
+  - Hold and wait
+  - No preemption
+  - Circular wait
+- Also consider the **cost** of your fixes
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="46%"}
+```{.c}
+void philosopher(int i) {
+  while (1) {
+    think();
+    lock(fork[i]);         // left
+    lock(fork[(i+1) % 5]); // right
+    eat();
+    unlock(fork[(i+1) % 5]);
+    unlock(fork[i]);
+  }
+}
+```
+:::
+::::
+
+::: {.notes}
+Timing: ~2 min think, ~5 min groups, ~6 min share (go around the four conditions in order).
+
+Deadlock: every philosopher grabs their left fork at the same time; each then waits forever for the right fork, which their neighbor holds. RAG is a 5-cycle.
+
+Fixes and costs, by condition:
+- Mutual exclusion: share forks / buy more forks. Usually "you can't" — a fork in use can't be shared. Good to have a group discover this is the dead end, which matches the summary slide.
+- Hold and wait: pick up both forks atomically (a global mutex around the two lock calls, or a waiter who only hands out both). Cost: less concurrency — neighbors of a slow grabber wait; global lock serializes picking up.
+- No preemption: trylock the right fork; if it fails, put the left fork down and retry later. Cost: livelock (everyone grabs left, fails, drops, repeats in lockstep) and starvation. Random back-off helps.
+- Circular wait: one philosopher (e.g., P4) picks up right then left — equivalently, always lock the lower-numbered fork first. Cost: small; mild unfairness. This is the textbook answer and the same lock ordering as the transfer fix.
+
+Extra alternative to accept: allow at most 4 philosophers at the table (a counting semaphore initialized to 4). Ask which condition it breaks — it prevents the cycle from closing (circular wait), since at least one philosopher can always get both forks. Callback to counting semaphores from day 13.
+:::
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
+## Deadlock avoidance
+- All of the prevention techniques can be heavy-handed, reducing concurrency and overall system throughput
+- What if we had more information about process resource needs before allocation?
+  - Could we make smarter decisions about resource allocation?
+- This is the idea behind deadlock avoidance
+
+## Avoidance via resource-allocation graph
+:::: {.columns}
+::: {.column width="63%"}
+- Introduce the idea of a [claim edge]{.alert} (dashed line) from a process to a resource
+  - Indicates that the process may request that resource in the future
+- The system can maintain this graph, and only grant resources that will not create a cycle
+- Any downsides / limitations?
+  - Overhead of maintaining the graph and checking for cycles
+  - Only applicable to single instance resources
+
+:::
+::: {.column width="2%"}
+:::
+::: {.column width="35%"}
+```{dot}
+//| fig-width: 4.5
+digraph {
+  graph [layout=neato, bgcolor=transparent, splines=true]
+  node  [fontname="Helvetica", fontsize=16]
+  edge  [fontname="Helvetica", fontsize=14, color=gray40, fontcolor=gray40]
+  T1 [label="Thread 1", shape=circle, width=1.2, fixedsize=true, pos="0,1.4!"]
+  T3 [label="Thread 3", shape=circle, width=1.2, fixedsize=true, pos="2.8,1.4!"]
+  R1 [label="Resource 1", shape=box, pos="1.4,2.8!"]
+  R2 [label="Resource 2", shape=box, pos="1.4,0!"]
+  T1 -> R1 [label="requests", color=black, fontcolor=black, penwidth=2]
+  R1 -> T3 [label="held by"]
+  T1 -> R2 [label="may request", style=dashed, color=black, fontcolor=black]
+  T3 -> R2 [label="may request", style=dashed, color=black, fontcolor=black]
+}
+```
+:::
+::::
+
+## Deadlock avoidance in practice
+- Dijkstra's Banker's algorithm is the textbook example — each process declares its max resource needs, and requests are only granted if the resulting state is "safe." Not used in practice: overhead plus the prescience requirement
+- Resource-allocation graph with claim edges sees occasional use in constrained settings (e.g., embedded systems where max needs are predictable)
+
+## Detecting and recovering from deadlock
+- Allow deadlocks to occur, then detect and recover
+- In some cases, recovery is pretty simple. If your machine froze once per year (maybe it does?) what would you do?
+  - Reboot
+- What scenarios do you think complex detection and recovery would make sense?
+  - Systems with high availability requirements where manual intervention is costly or impractical
+    - telecommunications systems, financial transaction systems, healthcare systems
+    - critical infrastructure systems
+
+## Detection
+- Use a wait-for graph: a simplified resource-allocation graph that removes resource nodes
+  - An edge from process $P_i$ to $P_j$ indicates that $P_i$ is waiting for a resource held by $P_j$
+  - A cycle in this graph indicates a deadlock
+  - $O(n^2)$ algorithm to search for cycles (beyond the cost of maintaining the graph itself)
+  - Only applies to single instance resources
+
+## Detection (cont'd)
+:::: {.columns}
+::: {.column width="48%"}
+Resource-allocation graph
+
+```{dot}
+//| fig-width: 5
+digraph {
+  graph [layout=neato, bgcolor=transparent, splines=true]
+  node  [fontname="Helvetica", fontsize=16]
+  edge  [color=gray40]
+  P0 [shape=circle, width=0.7, fixedsize=true, pos="0,2.6!"]
+  P1 [shape=circle, width=0.7, fixedsize=true, pos="1.6,3.9!"]
+  P2 [shape=circle, width=0.7, fixedsize=true, pos="1.6,1.3!"]
+  P3 [shape=circle, width=0.7, fixedsize=true, pos="3.2,2.6!"]
+  P4 [shape=circle, width=0.7, fixedsize=true, pos="4.8,3.9!"]
+  P5 [shape=circle, width=0.7, fixedsize=true, pos="6.4,2.6!"]
+  P6 [shape=circle, width=0.7, fixedsize=true, pos="3.2,0!"]
+  R1 [shape=box, width=0.7, height=0.55, fixedsize=true, pos="0,3.9!"]
+  R2 [shape=box, width=0.7, height=0.55, fixedsize=true, pos="1.6,2.6!"]
+  R3 [shape=box, width=0.7, height=0.55, fixedsize=true, pos="4.8,2.6!"]
+  R4 [shape=box, width=0.7, height=0.55, fixedsize=true, pos="3.2,1.3!"]
+  R5 [shape=box, width=0.7, height=0.55, fixedsize=true, pos="6.4,1.3!"]
+  R6 [shape=box, width=0.7, height=0.55, fixedsize=true, pos="1.6,0!"]
+  edge [color=black, penwidth=2]
+  P0 -> R2; P1 -> R2; P2 -> R2; P3 -> R3; P4 -> R3; P5 -> R5; P6 -> R4
+  edge [color=gray40, penwidth=1]
+  R1 -> P1; R2 -> P3; R3 -> P5; R4 -> P3; R5 -> P6; R6 -> P2
+}
+```
+:::
+::: {.column width="4%"}
+:::
+::: {.column width="48%" .fragment}
+Wait-for graph
+
+```{dot}
+//| fig-width: 5
+digraph {
+  graph [layout=neato, bgcolor=transparent, splines=true]
+  node  [fontname="Helvetica", fontsize=16]
+  edge  [color=gray40]
+  P0 [shape=circle, width=0.7, fixedsize=true, pos="0,2.6!"]
+  P1 [shape=circle, width=0.7, fixedsize=true, pos="1.6,3.9!"]
+  P2 [shape=circle, width=0.7, fixedsize=true, pos="1.6,1.3!"]
+  P3 [shape=circle, width=0.7, fixedsize=true, pos="3.2,2.6!"]
+  P4 [shape=circle, width=0.7, fixedsize=true, pos="4.8,3.9!"]
+  P5 [shape=circle, width=0.7, fixedsize=true, pos="6.4,2.6!"]
+  P6 [shape=circle, width=0.7, fixedsize=true, pos="3.2,0!"]
+  P0 -> P3; P1 -> P3; P2 -> P3; P4 -> P5
+  edge [color=black, penwidth=2]
+  P3 -> P5; P5 -> P6; P6 -> P3
+}
+```
+:::
+::::
+
+::: {.notes}
+Ask students to build the wait-for graph before revealing it: for each request edge P -> R, add P -> (holder of R).
+
+Cycle P3 -> P5 -> P6 -> P3 means P3, P5, P6 are deadlocked. P0, P1, P2 (waiting on P3) and P4 (waiting on P5) aren't in the cycle but are stuck forever anyway, since they wait on deadlocked processes. Good question: does killing P0 help? (No.) Which single process would you kill? (Any of P3, P5, P6; P3 frees the most since it also holds R2.)
+:::
+
+## Detection (cont'd)
+- For multiple instance resources, we can use an algorithm similar to the Banker's algorithm to detect deadlock
+- Question: How often should we run the detection algorithm?
+  - Too often: wasteful overhead
+  - Not often enough: long delays before recovery
+  - What if we run it when a process requests a resource?
+    - Could allow us to assign blame for deadlock to the requesting process
+  - Heuristically (CPU utilization, etc.)
+    - Less overhead, but harder to assign blame
+
+## Recovery options
+- Process termination
+  - Abort all deadlocked processes (brute force)
+  - Abort one process at a time until deadlock is resolved
+    - How to choose which process to abort?
+      - Priority, time running, resources used, etc.
+- Resource preemption
+  - Temporarily take resources away from some processes and give to others until deadlock is resolved
+  - Highly dependent on the resource type
+  - Rollback problem - processes may need to be rolled back to a safe state before resources can be reallocated
+  - Starvation problem - same victims may be chosen repeatedly
+
+## Pick the policy
+:::{.nonincremental}
+- For each system below, which deadlock strategy fits best — and **why**?
+  1. Flight control software on a commercial aircraft
+  2. A university course-registration system during peak enrollment
+  3. Your personal laptop running a browser, editor, and Slack
+- For your pick, name the cost you're accepting (lost concurrency? overhead? user-visible failures?)
+:::
+
+:::{.notes}
+Goals: get them to weigh contention, cost of failure, and predictability. Push back hard if anyone picks avoidance — it's almost never the right answer outside narrow embedded niches.
+
+- (1) Prevention via strict resource/lock ordering. Failure cost is catastrophic, workloads are well-characterized, throughput is secondary. (Students may say "avoidance" — push them: who declares max needs? what's the runtime cost on every request?)
+- (2) Prevention via lock ordering on DB rows, plus detection-and-recovery (most DBs do exactly this — abort one txn on cycle detection). High contention but a hung session is recoverable.
+- (3) Ostrich. Deadlocks rare; reboot/kill is cheap; users won't tolerate any added overhead.
+
+Push them on: "what changes your answer?" — e.g., what if the laptop runs medical software?
+:::
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
