@@ -1,161 +1,231 @@
 [
   {
-    "objectID": "day13.html#admin",
-    "href": "day13.html#admin",
+    "objectID": "day14.html#admin",
+    "href": "day14.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nProgramming assignment 2 (schedfit) due Monday, 18:00\nLab due Friday, 18:00\nQuiz due Monday, 18:00\nExam regrade request deadline is Friday, 18:00"
+    "text": "Admin\n\nLab due Friday, 18:00\nQuiz due Monday, 18:00\nSign up for code review slots https://calendar.app.google/XGVki6gTCicVj8BU9"
   },
   {
-    "objectID": "day13.html#questions-to-consider",
-    "href": "day13.html#questions-to-consider",
+    "objectID": "day14.html#questions-to-consider",
+    "href": "day14.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow do synchronization solutions compare in implementation / function?\nWhat is priority inversion, and how does priority inheritance fix it?\nWhen would you choose a counting semaphore versus a binary semaphore or mutex, and what distinguishes them?"
+    "text": "Questions to consider\n\nWhat are the four necessary conditions for deadlock, and why must all four be present simultaneously?\nHow can Resource Allocation Graphs help us visualize and understand when deadlock might occur?\nWhy is a cycle necessary but not sufficient for deadlock when there are multiple instances of a resource?"
   },
   {
-    "objectID": "day13.html#hardware-solutions-atomicity",
-    "href": "day13.html#hardware-solutions-atomicity",
+    "objectID": "day14.html#deadlocks-1",
+    "href": "day14.html#deadlocks-1",
     "title": "CSC 4553",
-    "section": "Hardware solutions: atomicity",
-    "text": "Hardware solutions: atomicity\n\nRecall the naïve bool lock: both threads read lock == FALSE in the gap before either one set it\nFix: let the hardware do the read and the write as one indivisible step, an atomic instruction\n\nNo other CPU can touch that memory location partway through\n\nWhy not just disable interrupts? (this was the original solution)\n\nOnly stops preemption on this CPU; other cores keep running\n\n\n\n\nTie straight back to the day 12 interleaving table: the bug was the gap between step 1 (test) and step 4 (set). An atomic instruction makes that gap impossible.\nHow the hardware does it: on modern x86 a lock-prefixed instruction holds the cache line exclusively for the duration (old CPUs locked the whole memory bus). Other cores trying to touch that line wait.\nDisabling interrupts: works on a uniprocessor (no preemption means no interleaving), but it’s privileged and does nothing to stop another core. That’s why it’s not the general answer anymore."
+    "section": "Deadlocks",
+    "text": "Deadlocks\n\nIf we’re not careful about dependencies, we might create pathologies that lead to deadlock\n\nLike race conditions, may only happen sometimes, making them hard to identify and debug\n\nExample: Three processes, three resources of the same type, each process requires two resources to make progress\n\nThis can happen across a network as well, which is particularly hard to diagnose\n\nCan we detect and resolve these situations? Can we prevent them?"
   },
   {
-    "objectID": "day13.html#atomic-instructions",
-    "href": "day13.html#atomic-instructions",
+    "objectID": "day14.html#deadlock-example",
+    "href": "day14.html#deadlock-example",
     "title": "CSC 4553",
-    "section": "Atomic instructions",
-    "text": "Atomic instructions\n\nTwo classic ones:\n\ntest_and_set(&x): set x to true and return its old value\ncompare_and_swap(&x, expected, new): only if x == expected, set it to new; return the old value\n\nReal APIs differ: C11 atomic_compare_exchange_strong() returns a bool (did the swap happen?) and writes the old value back into expected\nSame information either way: old value == expected means the swap happened\n\nEither way, one instruction both checks “was it free?” and claims it\n\nLimit: works on a single word of memory, not on big operations\n\nAn “atomic B-tree update” instruction? No. \n\n\n\n\nWhy return the old value? After the call, x is always TRUE, so the new value tells you nothing. The old value answers “was it already taken?”\n\nOld value FALSE: it was free, and this instruction just claimed it. You’re in.\nOld value TRUE: someone else holds it; writing TRUE again changed nothing. Try again.\nHence while (test_and_set(&lock)); loops until it gets FALSE back. Reading the old value is the test, done in the same step as the set, so only one thread can ever get FALSE.\nSame idea for compare_and_swap: old value == expected means your swap happened; otherwise someone beat you.\n\nThe C-like test_and_set code on the next slide is a description of what the instruction does. In hardware it is one instruction, not three lines that could be interrupted."
+    "section": "Deadlock example",
+    "text": "Deadlock example\n\nClassic example: Thread1 holds lock L1 and is waiting for lock L2. Thread2 holds L2 and is waiting for L1\n  Thread 1:                       Thread 2:\n  pthread_mutex_lock(L1);         pthread_mutex_lock(L2);\n  pthread_mutex_lock(L2);         pthread_mutex_lock(L1);"
   },
   {
-    "objectID": "day13.html#does-this-solution-meet-the-requirements",
-    "href": "day13.html#does-this-solution-meet-the-requirements",
+    "objectID": "day14.html#deadlock-characteristics",
+    "href": "day14.html#deadlock-characteristics",
     "title": "CSC 4553",
-    "section": "Does this solution meet the requirements?",
-    "text": "Does this solution meet the requirements?\nbool test_and_set(bool *lock){\n  bool ret = *lock;\n  *lock = TRUE;\n  return ret;\n}\n\nlock = FALSE;\ndo{\n  while(test_and_set(&lock));\n  // CRITICAL SECTION\n  lock = FALSE;\n}while(true);\n\nMutual exclusion?\n\nYes\n\nProgress?\n\nYes: when the lock is released, a waiting process will acquire it\n\nBounded waiting?\n\nNo: an unlucky process could be endlessly passed over based on the scheduler’s decisions"
+    "section": "Deadlock characteristics",
+    "text": "Deadlock characteristics\n\nDefinition: A set of processes are deadlocked if each process in the set is waiting for an event that only another process in the set can cause.\n\nResource deadlock is the most common (and what we’ll focus on)"
   },
   {
-    "objectID": "day13.html#mutex-locks",
-    "href": "day13.html#mutex-locks",
+    "objectID": "day14.html#conditions-for-deadlock",
+    "href": "day14.html#conditions-for-deadlock",
     "title": "CSC 4553",
-    "section": "Mutex locks",
-    "text": "Mutex locks\n\nAtomic instruction-based solutions are complicated and generally not used by application programmers\nAny solution to the critical section problem requires a lock\n\nPeterson’s solution is an example (in software)\ntest_and_set() / compare_and_swap() are hardware implementations\n\nSimplest commonly used solution is mutex lock\n\nBoolean variable indicating if lock is available or not"
+    "section": "Conditions for deadlock",
+    "text": "Conditions for deadlock\n\nFour necessary conditions (simultaneous):\n\nMutual exclusion: At least one resource can only be held by one process at a time; this can result in other processes waiting for that resource\nHold and wait: A process must be holding at least one resource while waiting for other resources (held by other processes)\nNo preemption: Resources can only be released voluntarily by a process; Resources cannot be revoked\nCircular wait: A set of \\(n\\) waiting processes \\(\\{P_0, \\dots, P_{n-1}\\}\\) such that \\(P_i\\) is waiting for resources held by \\(P_{i+1 \\bmod{n}}\\)\n\nAll must be met"
   },
   {
-    "objectID": "day13.html#mutex-locks-contd",
-    "href": "day13.html#mutex-locks-contd",
+    "objectID": "day14.html#deadlock-conditions-are-design-choices",
+    "href": "day14.html#deadlock-conditions-are-design-choices",
     "title": "CSC 4553",
-    "section": "Mutex locks (cont’d)",
-    "text": "Mutex locks (cont’d)\n\nProtect a critical section by\n\nFirst acquire() a lock\nThen release() the lock\n\nWhat’s going on under the hood?\nvoid lock(lock_t *lock) {\n  while (test_and_set(&lock-&gt;flag))\n  ; // spin-wait (do nothing)\n}\n\ntest_and_set() or compare_and_swap()"
+    "section": "Deadlock conditions are design choices",
+    "text": "Deadlock conditions are design choices\n\n\n\n\n\n\n\n\nCondition\nThe question to ask\nAnswer that allows deadlock\n\n\n\n\nMutual exclusion\nCan two processes use this resource at the same time?\nNo: one owner at a time (e.g., a mutex)\n\n\nHold and wait\nCan a process keep what it has while it waits for more?\nYes: grab one lock, then wait for the next\n\n\nNo preemption\nCan the OS take a resource away from a process?\nNo: only the owner can give it back\n\n\nCircular wait\nCan processes request resources in any order?\nYes: T1 locks A then B, T2 locks B then A\n\n\n\n\nEach condition exists because of a rule the system chose. Pick a different rule, and the condition disappears.\nChange the answer to any one question and deadlock becomes impossible\n\n\nThe bank transfer example later makes this concrete: mutexes are exclusive, it holds from-&gt;lock while waiting for to-&gt;lock, nothing can take a mutex away, and the lock order depends on argument order. All four answers are “deadlock allowed.”\nThe last column sets up the prevention section: each prevention technique flips one answer."
   },
   {
-    "objectID": "day13.html#mutex-locks-contd-1",
-    "href": "day13.html#mutex-locks-contd-1",
+    "objectID": "day14.html#deadlock-modeling",
+    "href": "day14.html#deadlock-modeling",
     "title": "CSC 4553",
-    "section": "Mutex locks (cont’d)",
-    "text": "Mutex locks (cont’d)\n\nCalls to acquire() and release() must be atomic\nBut this solution requires busy waiting\n\nThis type of mutex is therefore often called a spinlock\n\nThere are also mutexes that block instead of busy-waiting (e.g., those built on futexes), and some that do both\nNote: mutexes are owned by the thread that locks them. Only the thread that acquired the mutex can release it"
+    "section": "Deadlock modeling",
+    "text": "Deadlock modeling\n\n\nResource Allocation Graph: a directed graph; processes (circles) and resources (squares) are nodes\n\nRequest edge: thread → resource\nAssignment edge: resource → thread\n\n\n\nCycles in a graph indicate possible deadlock\n\nOne instance per resource: a cycle is necessary and sufficient\nMultiple instances: a cycle is necessary but not sufficient"
   },
   {
-    "objectID": "day13.html#futex-fast-path-slow-path",
-    "href": "day13.html#futex-fast-path-slow-path",
+    "objectID": "day14.html#example-the-bank-transfer",
+    "href": "day14.html#example-the-bank-transfer",
     "title": "CSC 4553",
-    "section": "Futex: fast path, slow path",
-    "text": "Futex: fast path, slow path\n\nBlocking is safe but costly (a syscall every time); real systems want the common case to be cheap\nFutex (Fast Userspace muTEX, Linux 2002) makes that possible\nKey idea: most lock acquisitions are uncontended\n\nPut the lock variable in user-space memory\nTry to grab it with a single atomic instruction (e.g., cmpxchg)\nIf you win → done. No syscall, no kernel involvement (~10 ns)\n\nOnly on contention do you call into the kernel via the futex() syscall\n\nKernel adds you to a wait queue and puts you to sleep\nReleaser, if there are waiters, calls futex() to wake one up"
+    "section": "Example: the bank transfer",
+    "text": "Example: the bank transfer\n\n\nvoid transfer(account *from, account *to, int amt) {\n  pthread_mutex_lock(&from-&gt;lock);\n  pthread_mutex_lock(&to-&gt;lock);\n  from-&gt;balance -= amt;\n  to-&gt;balance   += amt;\n  pthread_mutex_unlock(&to-&gt;lock);\n  pthread_mutex_unlock(&from-&gt;lock);\n}\nThread 1: transfer(&alice, &bob, 50);\nThread 2: transfer(&bob, &alice, 20);\n\n\n\n\nThink: Can this deadlock? Write down an interleaving that causes it.\nDiscuss: Together, draw the RAG at the moment it’s stuck. Find the line(s) of code responsible for each of the four conditions.\n\n\n\nTiming: ~2 min think, ~4 min pair, ~5 min share.\nInterleaving: T1 locks alice, T2 locks bob, T1 blocks on bob, T2 blocks on alice.\nRAG: alice -&gt; T1 (held), T1 -&gt; bob (request), bob -&gt; T2 (held), T2 -&gt; alice (request). One instance each, so the cycle is sufficient.\nConditions mapped to code: - Mutual exclusion: pthread mutexes — only one owner. - Hold and wait: holding from-&gt;lock at line 2 while blocking at line 3. - No preemption: nothing can take a mutex away from a thread; only the owner unlocks. - Circular wait: lock order depends on argument order, so two callers can acquire in opposite orders.\nPoint out that the code looks perfectly reasonable and passes most tests — the window between the two lock calls is tiny. Callback to “like race conditions, may only happen sometimes.”"
   },
   {
-    "objectID": "day13.html#futex-contd",
-    "href": "day13.html#futex-contd",
+    "objectID": "day14.html#push-it-further",
+    "href": "day14.html#push-it-further",
     "title": "CSC 4553",
-    "section": "Futex (cont’d)",
-    "text": "Futex (cont’d)\n\nThis is why pthread_mutex_t on Linux is cheap when uncontended — it’s built on futexes\nSame story for std::mutex in C++ and most modern language runtimes\nQuestion: why can’t you build a blocking mutex purely in user space?\n\nBlocking an OS thread — taking it off the run queue — is a kernel operation by definition\nOnly the kernel can decide which thread runs on a CPU\nFutex is the minimum-syscall way to ask the kernel for that service"
+    "section": "Push it further",
+    "text": "Push it further\nWith others, decide deadlock or not for each, and justify with the four conditions or the RAG:\n\nThree threads: transfer(A,B), transfer(B,C), transfer(C,A)\nOne thread: transfer(&alice, &alice, 10)\nWhat is the smallest change to transfer() that makes the original two-thread case safe?\n\n\n\nYes — a 3-cycle. Generalizes: any cycle of transfers can deadlock. Good moment to ask “how would you even find this in testing?”\nTrick question — it hangs, but it is not a deadlock by our definition. The thread locks alice, then blocks trying to lock alice again (hangs forever for PTHREAD_MUTEX_NORMAL; undefined behavior for PTHREAD_MUTEX_DEFAULT). Our definition requires waiting on an event only another process in the set can cause, and circular wait needs a set of waiting processes — here there’s no one else. People casually call this “self-deadlock,” but it’s a plain programming bug. Use it to make students apply the definition rather than “it’s stuck, so it’s deadlock.” Fix: check from == to.\nAlways lock in a global order, e.g., lower account ID (or lower address) first. That breaks circular wait — sets up the next section. Don’t fully explain yet; let them propose it and say “hold that thought.”"
   },
   {
-    "objectID": "day13.html#hidden-costs-of-locking",
-    "href": "day13.html#hidden-costs-of-locking",
-    "title": "CSC 4553",
-    "section": "Hidden costs of locking",
-    "text": "Hidden costs of locking\nIn 1997, NASA’s Mars Pathfinder started having mysterious resets on Mars. From Earth, engineers saw the system repeatedly rebooting for no obvious reason. Not ideal when your computer is ~190 million km away.\nThe cause: priority inversion.\n\nLow-priority task holds a mutex\nHigh-priority task needs it, so it blocks\nMedium-priority task (doesn’t need the mutex) keeps preempting the low-priority one\nLow never runs, so it never releases; high is starved\nA watchdog sees the stall as a fault and resets the system. Over and over.\n\n\n\nThe OS was VxWorks; the mutex had been created with priority inheritance turned off. Hold that detail for the next slide’s fix."
-  },
-  {
-    "objectID": "day13.html#priority-inversion",
-    "href": "day13.html#priority-inversion",
-    "title": "CSC 4553",
-    "section": "Priority inversion",
-    "text": "Priority inversion\n\nAny ideas on how to fix?\n\nPriority inheritance: low priority processes are temporarily given priorities that match those waiting on them\n\n\n\n\nPathfinder epilogue: JPL reproduced the bug on a ground replica, then uploaded a patch that turned priority inheritance on for that mutex. The resets stopped."
-  },
-  {
-    "objectID": "day13.html#section",
-    "href": "day13.html#section",
+    "objectID": "day14.html#section",
+    "href": "day14.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day13.html#semaphores",
-    "href": "day13.html#semaphores",
+    "objectID": "day14.html#questions-to-consider-1",
+    "href": "day14.html#questions-to-consider-1",
     "title": "CSC 4553",
-    "section": "Semaphores",
-    "text": "Semaphores\n\n\n\nSynchronization tool that provides more sophisticated ways (than mutex locks) for processes to synchronize their activities\nSemaphore S: integer variable\nCan only be accessed via two atomic operations\n\nwait() and signal()\nOriginally called P() and V() (because, Dutch)\n\nDo not have ownership, any thread can signal (increment) or wait (decrement)\n\n\n\n\nwait(S) {\n    while (S &lt;= 0)\n       ; // busy\n    S--;\n}\n\nsignal(S) {\n    S++;\n}"
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhat are the approaches to handling deadlock? How practical is each? How do they differ in approach?\nHow does deadlock avoidance differ from deadlock prevention? What techniques do we implement for deadlock avoidance?\nWhat are the trade-offs between detecting/recovering from deadlock versus preventing or avoiding it, and when is detection practical?"
   },
   {
-    "objectID": "day13.html#semaphores-contd",
-    "href": "day13.html#semaphores-contd",
+    "objectID": "day14.html#how-should-the-os-handle-deadlocks",
+    "href": "day14.html#how-should-the-os-handle-deadlocks",
     "title": "CSC 4553",
-    "section": "Semaphores (cont’d)",
-    "text": "Semaphores (cont’d)\n\n\n\nBinary semaphore: integer value can range only between 0 and 1\n\nFunctionally similar to a mutex, but without ownership — any thread can signal it\n\n\n\n\n\ndo{\n  wait(mutex);\n  //CS\n  signal(mutex);\n}while(TRUE);\n\n\nCounting semaphore: integer value can range over an unrestricted domain\n\nWhen would this make sense?\n\nProtect a finite set of resources rather than a single one (e.g., you have a pool of shared db connections)\nInitialize S to the number of resources\nDecrement S each time someone grabs a resource, increment when they release"
+    "section": "How should the OS handle deadlocks?",
+    "text": "How should the OS handle deadlocks?\n\nOS can prevent deadlock: ensure deadlocks can never occur (by preventing one of the deadlock requirements from occurring)\nOS can avoid deadlock: like prevention, but given more information about a process’s resource needs\nOS can detect deadlock: allow system to deadlock, detect and recover\nOS can do nothing, and let applications handle it\n\nOstrich Algorithm: head in sand; wait"
   },
   {
-    "objectID": "day13.html#enforce-the-order",
-    "href": "day13.html#enforce-the-order",
+    "objectID": "day14.html#deadlock-prevention",
+    "href": "day14.html#deadlock-prevention",
     "title": "CSC 4553",
-    "section": "Enforce the order",
-    "text": "Enforce the order\nSemaphore can also be used to impose order…\nThree threads each loop forever: one prints A, one prints B, one prints C.\nUsing only semaphores, guarantee the output is always ABCABCABC...\n\nHow many semaphores do you need?\nWhat are their initial values?\nWhere do the wait() and signal() calls go?\n\n\nOne semaphore per thread, chained in a ring — each thread waits on its own semaphore and signals the next one’s:\nsem sA = 1, sB = 0, sC = 0;\n\nTA: while(1){ wait(sA); print(\"A\"); signal(sB); }\nTB: while(1){ wait(sB); print(\"B\"); signal(sC); }\nTC: while(1){ wait(sC); print(\"C\"); signal(sA); }\n\nInitial values matter. Exactly one semaphore starts at 1 — that picks who goes first. Common mistake: all initialized to 0 → every thread blocks on its first wait() → deadlock. Another: all initialized to 1 → three tokens circulate, so the order is never enforced.\nThe wrap-around (TC signals sA) is what makes it repeat; each signal(next) → wait(next) pair is one link in the chain.\nWhy not mutexes? Because this is signaling between threads, not mutual exclusion — and mutexes have ownership.\n\nLook at who calls what: TA calls signal(sB) but never called wait(sB). The wait() and signal() on each semaphore happen in different threads.\nA mutex is owned by the thread that locked it — only that thread may unlock it. The lock/unlock pair must bracket a critical section within one thread.\nTry it anyway: to make TB block at the start, mB must already be locked. Who locks it? Say main does. Then TA must unlock mB to let TB go — but TA doesn’t own it. With pthreads that’s undefined behavior for a default mutex, or EPERM for an error-checking mutex. Either way, it’s not a valid use.\nSemaphores have no owner: the value is just a counter, and any thread can increment it. That’s exactly what “pass the token to the next thread” needs.\nSemaphores also remember a signal: if TA calls signal(sB) before TB reaches wait(sB), the value stays at 1 and TB goes right through. Nothing is lost.\nIf you only had mutexes, the correct tool is a mutex + condition variable + a shared turn variable (each thread waits until turn is its letter, prints, sets turn to the next letter, and broadcasts). That works, but it’s more code — a good callback to condition variables from day 11.\n\nInvariant to point out: at any moment the sum sA + sB + sC is at most 1 — a single “token” is passed around the ring.\n\nStretch if time: make it print ABBCABBC... Multiple valid answers (e.g., TB loops twice per turn, or two B threads chained B1→B2). Good for discussion — no single right answer."
+    "section": "Deadlock prevention",
+    "text": "Deadlock prevention\n\nRemember, we just have to break one of these to prevent deadlock\n\nMutual exclusion\nHold and wait\nNo preemption\nCircular wait\n\n\n\nAny ideas?\n\n\nExample Strategies: - Dynamic Resource Allocation: Implement algorithms that dynamically adjust resource allocation based on current system state and process priorities. - Timeout Mechanism: Introduce timeouts for resource requests, forcing processes to release resources if they cannot acquire all necessary resources within a certain timeframe. - Resource Hierarchies: Establish a hierarchy for resource allocation, ensuring that processes request resources in a predefined order to avoid circular wait conditions. - Predictive Analysis: Use machine learning to predict potential deadlock scenarios based on historical data and proactively adjust resource allocation.\nFollow-Up Questions: - How does your strategy address mutual exclusion? - Can your strategy be implemented in real-world systems? If so, how? - What challenges might arise when implementing your strategy?"
   },
   {
-    "objectID": "day13.html#blocking-semaphores",
-    "href": "day13.html#blocking-semaphores",
+    "objectID": "day14.html#attacking-mutual-exclusion",
+    "href": "day14.html#attacking-mutual-exclusion",
     "title": "CSC 4553",
-    "section": "Blocking semaphores",
-    "text": "Blocking semaphores\n\n\n\nWe add sleep() and wakeup() to the underlying implementation\nCall to wait, and semaphore not available, process is blocked with sleep() (wait state) and placed on a waiting queue\nBlocked processes are notified of an available semaphore by the wakeup() operation\n\ngoes from waiting to ready\nAble to achieve bounded wait and progress with FIFO queue\n\n\n\n\n\nwait(semaphore *S) {\n   S-&gt;value--;\n   if (S-&gt;value &lt; 0) {\n      add process to S-&gt;list;\n      sleep();\n   }\n}\n\nsignal(semaphore *S) {\n   S-&gt;value++;\n   if (S-&gt;value &lt;= 0) {\n      remove P from S-&gt;list;\n      wakeup(P);\n   }\n}"
+    "section": "Attacking mutual exclusion",
+    "text": "Attacking mutual exclusion\n\nMake resources sharable so they aren’t held by only one process at a time; some resources are naturally sharable (e.g., read-only files), but preventing mutual exclusion is fundamentally difficult as so many resources are non-sharable: printers, writable files, mutex locks, etc.\n\nSpoolers can sidestep this for some resources (e.g., a print spooler accepts jobs so no one “owns” the printer directly)"
   },
   {
-    "objectID": "day13.html#mutexes-vs.-semaphores",
-    "href": "day13.html#mutexes-vs.-semaphores",
+    "objectID": "day14.html#attacking-hold-and-wait",
+    "href": "day14.html#attacking-hold-and-wait",
     "title": "CSC 4553",
-    "section": "Mutexes vs. semaphores",
-    "text": "Mutexes vs. semaphores\n\nMutexes are generally lighter weight / faster\nSemaphores can support multiple instances\nSemaphores don’t have the ownership limitations of mutexes"
+    "section": "Attacking hold and wait",
+    "text": "Attacking hold and wait\n\nWhen a process requests a resource, it cannot be holding any other resources\nA process must request all of its resources at one time\nExample, treat group of lock acquisitions like a critical section and surround with a mutex\npthread_mutex_lock(global_lock);\npthread_mutex_lock(L1);\npthread_mutex_lock(L2);\n...\npthread_mutex_unlock(global_lock);\nSee any downsides?\n\nMust know all needed locks a priori\nWill likely decrease concurrency"
   },
   {
-    "objectID": "day13.html#choose-your-primitive",
-    "href": "day13.html#choose-your-primitive",
+    "objectID": "day14.html#attacking-no-preemption",
+    "href": "day14.html#attacking-no-preemption",
     "title": "CSC 4553",
-    "section": "Choose your primitive",
-    "text": "Choose your primitive\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 1: You have a pool of database connections, and you need to limit the number of threads that can access these connections simultaneously.\n\nCounting semaphore\n\nScenario 2: You need to increment a shared counter frequently, and the operation is very quick.\n\nAtomic instruction\n\nScenario 3: A kernel data structure protected by a lock held for ~50 CPU cycles.\n\nSpin lock mutex"
+    "section": "Attacking no preemption",
+    "text": "Attacking no preemption\n\nIf a process is holding some resources and requests another that cannot be immediately allocated, then all resources held are released\nProcess is restarted only when it can regain its old resources plus the new\nDownsides?\n\nNot all resources are preempt-able\nStarvation is possible"
   },
   {
-    "objectID": "day13.html#choose-your-primitive-contd",
-    "href": "day13.html#choose-your-primitive-contd",
+    "objectID": "day14.html#attacking-circular-wait",
+    "href": "day14.html#attacking-circular-wait",
     "title": "CSC 4553",
-    "section": "Choose your primitive (cont’d)",
-    "text": "Choose your primitive (cont’d)\n\nFor each, choose between: atomic instructions; spin lock mutexes; blocking (futex-based) mutexes; semaphores\nScenario 4: A user-space cache entry lock held for ~100 µs while computing a result.\n\nBlocking mutex (e.g., pthread_mutex_t, built on a futex)\n\nScenario 5: A file lock held for several seconds while the file is being edited.\n\nBlocking mutex\n\nScenario 6: A lock on a single-CPU system where only one thread can run at a time.\n\nBlocking mutex: never spin on a uniprocessor\n\n\n\nRule of thumb for spin vs. block: spin if the expected wait is shorter than ~2 context switches (a context switch is roughly 1–10 µs depending on the system). Otherwise block.\n\n\nSpin. 50 cycles is ~15–25 ns — vastly cheaper than a context switch. Blocking would cost orders of magnitude more than the wait itself. This is exactly how Linux kernel spinlocks are used.\n\n\nBlock. 100 µs is well above the context-switch break-even. While you wait, let another thread actually do work on the CPU.\n\n\nBlock (obviously). Seconds of spinning wastes enormous CPU. You want the waiter off the CPU entirely — probably using a kernel-mediated wait queue.\n\n\nNever spin. On a uniprocessor, the lock holder cannot make progress while you’re spinning — you’re burning the very CPU cycles the holder needs to release the lock. Spinlocks only make sense when another CPU can be releasing the lock concurrently.\n\n\nKey insight: the break-even isn’t about the lock, it’s about the expected hold time relative to the cost of a context switch. Real systems often use adaptive mutexes that spin briefly, then block if the lock isn’t acquired quickly."
+    "section": "Attacking circular wait",
+    "text": "Attacking circular wait\n\nHow could you prevent by focusing on the circular wait requirement?\nImpose a total ordering of all resource types\n\nFor example, resource types R1, R2, …, Rn have ordering R1 &lt; R2 &lt; … &lt; Rn\nA process that needs multiple resources must request them in increasing order of enumeration\n\nDownsides?\n\nMay be difficult to impose a meaningful ordering\nMay lead to reduced concurrency"
   },
   {
-    "objectID": "day13.html#beware-mistakes-are-easy-to-make",
-    "href": "day13.html#beware-mistakes-are-easy-to-make",
+    "objectID": "day14.html#fix-the-transfer",
+    "href": "day14.html#fix-the-transfer",
     "title": "CSC 4553",
-    "section": "Beware: mistakes are easy to make",
-    "text": "Beware: mistakes are easy to make\n\nIncorrect use of semaphore operations\n\nwrong order: signal(mutex) … wait(mutex)\nrepeating: wait(mutex) … wait(mutex)\nOmitting of wait(mutex) and/or signal(mutex)\n\nBe careful"
+    "section": "Fix the transfer",
+    "text": "Fix the transfer\n\n\nvoid transfer(account *a, account *b, int amt) {\n  pthread_mutex_lock(&a-&gt;lock);\n  pthread_mutex_lock(&b-&gt;lock);\n  a-&gt;balance -= amt;\n  b-&gt;balance += amt;\n  pthread_mutex_unlock(&b-&gt;lock);\n  pthread_mutex_unlock(&a-&gt;lock);\n}\n\n\n\n\nThink: Rewrite transfer() so it can never deadlock. Which condition did you break?\nDiscuss: Compare with a neighbor. Then extend it: transfer_many(account *accts[], int n) must lock all n accounts before moving money.\n\n\n\nTiming: ~2 min think, ~4 min pair, ~3 min share.\nFix: break circular wait by locking in a global order — every account gets a unique id (or compare addresses):\nvoid transfer(account *a, account *b, int amt) {\n  account *first  = (a-&gt;id &lt; b-&gt;id) ? a : b;\n  account *second = (a-&gt;id &lt; b-&gt;id) ? b : a;\n  pthread_mutex_lock(&first-&gt;lock);\n  pthread_mutex_lock(&second-&gt;lock);\n  a-&gt;balance -= amt;\n  b-&gt;balance += amt;\n  pthread_mutex_unlock(&second-&gt;lock);\n  pthread_mutex_unlock(&first-&gt;lock);\n}\n\nUnlock order doesn’t matter for deadlock — only acquisition order does. Worth asking.\na == b: still self-blocks on the second lock. Need an early check (callback to “push it further” #2).\ntransfer_many: sort accts by id, then lock in order (and skip duplicates). Same idea the Linux filemap.c comment on the summary slide documents.\nAlternative answers to accept and discuss: a single global lock (breaks hold and wait — correct but serializes every transfer); trylock-and-back-off (breaks no preemption — works, but can livelock)."
   },
   {
-    "objectID": "day13.html#condition-variables",
-    "href": "day13.html#condition-variables",
+    "objectID": "day14.html#deadlock-prevention-summary",
+    "href": "day14.html#deadlock-prevention-summary",
     "title": "CSC 4553",
-    "section": "Condition variables",
-    "text": "Condition variables\n\nPaired with a mutex to let threads wait for a condition rather than spin\nx.wait(): calling thread releases the mutex and suspends until signaled; it reacquires the mutex before returning\nx.signal(): wakes one waiter (if any); no effect if no waiters\nx.broadcast(): wake all waiters — useful when multiple threads may now be able to proceed\nNot like a semaphore: a semaphore remembers a signal (the count stays incremented, so a later wait() goes right through); a CV signal with no one waiting is simply lost\nGood fit for producer-consumer and any case where threads must sleep until a resource / condition is ready"
+    "section": "Deadlock prevention summary",
+    "text": "Deadlock prevention summary\n\nWhich approach is best?\n\nAttacking mutual exclusion is generally not feasible\nAttacking hold and wait is wasteful and requires prescience\nAttacking no preemption is difficult due to non-preemptable resources\nAttacking circular wait is practical but may reduce concurrency - often the best choice and most used"
   },
   {
-    "objectID": "day13.html#section-1",
-    "href": "day13.html#section-1",
+    "objectID": "day14.html#dining-philosophers",
+    "href": "day14.html#dining-philosophers",
+    "title": "CSC 4553",
+    "section": "Dining philosophers",
+    "text": "Dining philosophers\n\n\n\nFive philosophers around a table, one fork between each pair\nTo eat, a philosopher needs both adjacent forks\n\nvoid philosopher(int i) {\n  while (1) {\n    think();\n    lock(fork[i]);            // left\n    lock(fork[(i + 1) % 5]);  // right\n    eat();\n    unlock(fork[(i + 1) % 5]);\n    unlock(fork[i]);\n  }\n}\n\n\n\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nF0\n\nF0\n\n\n\nP1\n\nP1\n\n\n\nF1\n\nF1\n\n\n\nP2\n\nP2\n\n\n\nF2\n\nF2\n\n\n\nP3\n\nP3\n\n\n\nF3\n\nF3\n\n\n\nP4\n\nP4\n\n\n\nF4\n\nF4"
+  },
+  {
+    "objectID": "day14.html#break-one-condition",
+    "href": "day14.html#break-one-condition",
+    "title": "CSC 4553",
+    "section": "Break one condition",
+    "text": "Break one condition\n\n\n\nThink: How can the philosophers deadlock? Point to each of the four conditions in the code.\nDiscuss: For each condition, explain how it can be broken. Change the code (or the rules) so deadlock is impossible.\n\nMutual exclusion\nHold and wait\nNo preemption\nCircular wait\n\nAlso consider the cost of your fixes\n\n\n\n\nvoid philosopher(int i) {\n  while (1) {\n    think();\n    lock(fork[i]);         // left\n    lock(fork[(i+1) % 5]); // right\n    eat();\n    unlock(fork[(i+1) % 5]);\n    unlock(fork[i]);\n  }\n}\n\n\nTiming: ~2 min think, ~5 min groups, ~6 min share (go around the four conditions in order).\nDeadlock: every philosopher grabs their left fork at the same time; each then waits forever for the right fork, which their neighbor holds. RAG is a 5-cycle.\nFixes and costs, by condition: - Mutual exclusion: share forks / buy more forks. Usually “you can’t” — a fork in use can’t be shared. Good to have a group discover this is the dead end, which matches the summary slide. - Hold and wait: pick up both forks atomically (a global mutex around the two lock calls, or a waiter who only hands out both). Cost: less concurrency — neighbors of a slow grabber wait; global lock serializes picking up. - No preemption: trylock the right fork; if it fails, put the left fork down and retry later. Cost: livelock (everyone grabs left, fails, drops, repeats in lockstep) and starvation. Random back-off helps. - Circular wait: one philosopher (e.g., P4) picks up right then left — equivalently, always lock the lower-numbered fork first. Cost: small; mild unfairness. This is the textbook answer and the same lock ordering as the transfer fix.\nExtra alternative to accept: allow at most 4 philosophers at the table (a counting semaphore initialized to 4). Ask which condition it breaks — it prevents the cycle from closing (circular wait), since at least one philosopher can always get both forks. Callback to counting semaphores from day 13."
+  },
+  {
+    "objectID": "day14.html#section-1",
+    "href": "day14.html#section-1",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day14.html#deadlock-avoidance",
+    "href": "day14.html#deadlock-avoidance",
+    "title": "CSC 4553",
+    "section": "Deadlock avoidance",
+    "text": "Deadlock avoidance\n\nAll of the prevention techniques can be heavy-handed, reducing concurrency and overall system throughput\nWhat if we had more information about process resource needs before allocation?\n\nCould we make smarter decisions about resource allocation?\n\nThis is the idea behind deadlock avoidance"
+  },
+  {
+    "objectID": "day14.html#avoidance-via-resource-allocation-graph",
+    "href": "day14.html#avoidance-via-resource-allocation-graph",
+    "title": "CSC 4553",
+    "section": "Avoidance via resource-allocation graph",
+    "text": "Avoidance via resource-allocation graph\n\n\n\nIntroduce the idea of a claim edge (dashed line) from a process to a resource\n\nIndicates that the process may request that resource in the future\n\nThe system can maintain this graph, and only grant resources that will not create a cycle\nAny downsides / limitations?\n\nOverhead of maintaining the graph and checking for cycles\nOnly applicable to single instance resources\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nT1\n\nThread 1\n\n\n\nR1\n\nResource 1\n\n\n\nT1-&gt;R1\n\n\nrequests\n\n\n\nR2\n\nResource 2\n\n\n\nT1-&gt;R2\n\n\nmay request\n\n\n\nT3\n\nThread 3\n\n\n\nT3-&gt;R2\n\n\nmay request\n\n\n\nR1-&gt;T3\n\n\nheld by"
+  },
+  {
+    "objectID": "day14.html#deadlock-avoidance-in-practice",
+    "href": "day14.html#deadlock-avoidance-in-practice",
+    "title": "CSC 4553",
+    "section": "Deadlock avoidance in practice",
+    "text": "Deadlock avoidance in practice\n\nDijkstra’s Banker’s algorithm is the textbook example — each process declares its max resource needs, and requests are only granted if the resulting state is “safe.” Not used in practice: overhead plus the prescience requirement\nResource-allocation graph with claim edges sees occasional use in constrained settings (e.g., embedded systems where max needs are predictable)"
+  },
+  {
+    "objectID": "day14.html#detecting-and-recovering-from-deadlock",
+    "href": "day14.html#detecting-and-recovering-from-deadlock",
+    "title": "CSC 4553",
+    "section": "Detecting and recovering from deadlock",
+    "text": "Detecting and recovering from deadlock\n\nAllow deadlocks to occur, then detect and recover\nIn some cases, recovery is pretty simple. If your machine froze once per year (maybe it does?) what would you do?\n\nReboot\n\nWhat scenarios do you think complex detection and recovery would make sense?\n\nSystems with high availability requirements where manual intervention is costly or impractical\n\ntelecommunications systems, financial transaction systems, healthcare systems\ncritical infrastructure systems"
+  },
+  {
+    "objectID": "day14.html#detection",
+    "href": "day14.html#detection",
+    "title": "CSC 4553",
+    "section": "Detection",
+    "text": "Detection\n\nUse a wait-for graph: a simplified resource-allocation graph that removes resource nodes\n\nAn edge from process \\(P_i\\) to \\(P_j\\) indicates that \\(P_i\\) is waiting for a resource held by \\(P_j\\)\nA cycle in this graph indicates a deadlock\n\\(O(n^2)\\) algorithm to search for cycles (beyond the cost of maintaining the graph itself)\nOnly applies to single instance resources"
+  },
+  {
+    "objectID": "day14.html#detection-contd",
+    "href": "day14.html#detection-contd",
+    "title": "CSC 4553",
+    "section": "Detection (cont’d)",
+    "text": "Detection (cont’d)\n\n\nResource-allocation graph\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nR2\n\nR2\n\n\n\nP0-&gt;R2\n\n\n\n\n\nP1\n\nP1\n\n\n\nP1-&gt;R2\n\n\n\n\n\nP2\n\nP2\n\n\n\nP2-&gt;R2\n\n\n\n\n\nP3\n\nP3\n\n\n\nR3\n\nR3\n\n\n\nP3-&gt;R3\n\n\n\n\n\nP4\n\nP4\n\n\n\nP4-&gt;R3\n\n\n\n\n\nP5\n\nP5\n\n\n\nR5\n\nR5\n\n\n\nP5-&gt;R5\n\n\n\n\n\nP6\n\nP6\n\n\n\nR4\n\nR4\n\n\n\nP6-&gt;R4\n\n\n\n\n\nR1\n\nR1\n\n\n\nR1-&gt;P1\n\n\n\n\n\nR2-&gt;P3\n\n\n\n\n\nR3-&gt;P5\n\n\n\n\n\nR4-&gt;P3\n\n\n\n\n\nR5-&gt;P6\n\n\n\n\n\nR6\n\nR6\n\n\n\nR6-&gt;P2\n\n\n\n\n\n\n\n\n\n\n\n\n\nWait-for graph\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nP3\n\nP3\n\n\n\nP0-&gt;P3\n\n\n\n\n\nP1\n\nP1\n\n\n\nP1-&gt;P3\n\n\n\n\n\nP2\n\nP2\n\n\n\nP2-&gt;P3\n\n\n\n\n\nP5\n\nP5\n\n\n\nP3-&gt;P5\n\n\n\n\n\nP4\n\nP4\n\n\n\nP4-&gt;P5\n\n\n\n\n\nP6\n\nP6\n\n\n\nP5-&gt;P6\n\n\n\n\n\nP6-&gt;P3\n\n\n\n\n\n\n\n\n\n\n\n\nAsk students to build the wait-for graph before revealing it: for each request edge P -&gt; R, add P -&gt; (holder of R).\nCycle P3 -&gt; P5 -&gt; P6 -&gt; P3 means P3, P5, P6 are deadlocked. P0, P1, P2 (waiting on P3) and P4 (waiting on P5) aren’t in the cycle but are stuck forever anyway, since they wait on deadlocked processes. Good question: does killing P0 help? (No.) Which single process would you kill? (Any of P3, P5, P6; P3 frees the most since it also holds R2.)"
+  },
+  {
+    "objectID": "day14.html#detection-contd-1",
+    "href": "day14.html#detection-contd-1",
+    "title": "CSC 4553",
+    "section": "Detection (cont’d)",
+    "text": "Detection (cont’d)\n\nFor multiple instance resources, we can use an algorithm similar to the Banker’s algorithm to detect deadlock\nQuestion: How often should we run the detection algorithm?\n\nToo often: wasteful overhead\nNot often enough: long delays before recovery\nWhat if we run it when a process requests a resource?\n\nCould allow us to assign blame for deadlock to the requesting process\n\nHeuristically (CPU utilization, etc.)\n\nLess overhead, but harder to assign blame"
+  },
+  {
+    "objectID": "day14.html#recovery-options",
+    "href": "day14.html#recovery-options",
+    "title": "CSC 4553",
+    "section": "Recovery options",
+    "text": "Recovery options\n\nProcess termination\n\nAbort all deadlocked processes (brute force)\nAbort one process at a time until deadlock is resolved\n\nHow to choose which process to abort?\n\nPriority, time running, resources used, etc.\n\n\n\nResource preemption\n\nTemporarily take resources away from some processes and give to others until deadlock is resolved\nHighly dependent on the resource type\nRollback problem - processes may need to be rolled back to a safe state before resources can be reallocated\nStarvation problem - same victims may be chosen repeatedly"
+  },
+  {
+    "objectID": "day14.html#pick-the-policy",
+    "href": "day14.html#pick-the-policy",
+    "title": "CSC 4553",
+    "section": "Pick the policy",
+    "text": "Pick the policy\n\nFor each system below, which deadlock strategy fits best — and why?\n\nFlight control software on a commercial aircraft\nA university course-registration system during peak enrollment\nYour personal laptop running a browser, editor, and Slack\n\nFor your pick, name the cost you’re accepting (lost concurrency? overhead? user-visible failures?)\n\n\nGoals: get them to weigh contention, cost of failure, and predictability. Push back hard if anyone picks avoidance — it’s almost never the right answer outside narrow embedded niches.\n\n\nPrevention via strict resource/lock ordering. Failure cost is catastrophic, workloads are well-characterized, throughput is secondary. (Students may say “avoidance” — push them: who declares max needs? what’s the runtime cost on every request?)\n\n\nPrevention via lock ordering on DB rows, plus detection-and-recovery (most DBs do exactly this — abort one txn on cycle detection). High contention but a hung session is recoverable.\n\n\nOstrich. Deadlocks rare; reboot/kill is cheap; users won’t tolerate any added overhead.\n\n\nPush them on: “what changes your answer?” — e.g., what if the laptop runs medical software?"
+  },
+  {
+    "objectID": "day14.html#section-2",
+    "href": "day14.html#section-2",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
