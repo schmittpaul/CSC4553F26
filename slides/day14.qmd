@@ -16,6 +16,7 @@ format:
 - Lab due Friday, 18:00
 - Quiz due Monday, 18:00
 - Sign up for code review slots [https://calendar.app.google/XGVki6gTCicVj8BU9](https://calendar.app.google/XGVki6gTCicVj8BU9)
+- Mid-semester survey on Canvas
 :::
 
 # Deadlocks {background-color="#40666e"}
