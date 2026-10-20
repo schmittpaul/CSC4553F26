@@ -1,161 +1,175 @@
 [
   {
-    "objectID": "day15.html#admin",
-    "href": "day15.html#admin",
+    "objectID": "day16.html#admin",
+    "href": "day16.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nLab due Friday, 18:00\nQuiz due Monday, 18:00\nSign up for code review slots https://calendar.app.google/XGVki6gTCicVj8BU9\nMid-semester survey on Canvas"
+    "text": "Admin\n\nDeadlines…\nMid-semester survey on Canvas"
   },
   {
-    "objectID": "day15.html#questions-to-consider",
-    "href": "day15.html#questions-to-consider",
-    "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the approaches to handling deadlock? How practical is each? How do they differ in approach?\nHow does deadlock avoidance differ from deadlock prevention? What techniques do we implement for deadlock avoidance?\nWhat are the trade-offs between detecting/recovering from deadlock versus preventing or avoiding it, and when is detection practical?"
-  },
-  {
-    "objectID": "day15.html#how-should-the-os-handle-deadlocks",
-    "href": "day15.html#how-should-the-os-handle-deadlocks",
-    "title": "CSC 4553",
-    "section": "How should the OS handle deadlocks?",
-    "text": "How should the OS handle deadlocks?\n\nOS can prevent deadlock: ensure deadlocks can never occur (by preventing one of the deadlock requirements from occurring)\nOS can avoid deadlock: like prevention, but given more information about a process’s resource needs\nOS can detect deadlock: allow system to deadlock, detect and recover\nOS can do nothing, and let applications handle it\n\nOstrich Algorithm: head in sand; wait"
-  },
-  {
-    "objectID": "day15.html#deadlock-prevention",
-    "href": "day15.html#deadlock-prevention",
-    "title": "CSC 4553",
-    "section": "Deadlock prevention",
-    "text": "Deadlock prevention\n\nRemember, we just have to break one of these to prevent deadlock\n\nMutual exclusion\nHold and wait\nNo preemption\nCircular wait\n\n\n\nAny ideas?\n\n\nExample Strategies: - Dynamic Resource Allocation: Implement algorithms that dynamically adjust resource allocation based on current system state and process priorities. - Timeout Mechanism: Introduce timeouts for resource requests, forcing processes to release resources if they cannot acquire all necessary resources within a certain timeframe. - Resource Hierarchies: Establish a hierarchy for resource allocation, ensuring that processes request resources in a predefined order to avoid circular wait conditions. - Predictive Analysis: Use machine learning to predict potential deadlock scenarios based on historical data and proactively adjust resource allocation.\nFollow-Up Questions: - How does your strategy address mutual exclusion? - Can your strategy be implemented in real-world systems? If so, how? - What challenges might arise when implementing your strategy?"
-  },
-  {
-    "objectID": "day15.html#attacking-mutual-exclusion",
-    "href": "day15.html#attacking-mutual-exclusion",
-    "title": "CSC 4553",
-    "section": "Attacking mutual exclusion",
-    "text": "Attacking mutual exclusion\n\nMake resources sharable so they aren’t held by only one process at a time; some resources are naturally sharable (e.g., read-only files), but preventing mutual exclusion is fundamentally difficult as so many resources are non-sharable: printers, writable files, mutex locks, etc.\n\nSpoolers can sidestep this for some resources (e.g., a print spooler accepts jobs so no one “owns” the printer directly)"
-  },
-  {
-    "objectID": "day15.html#attacking-hold-and-wait",
-    "href": "day15.html#attacking-hold-and-wait",
-    "title": "CSC 4553",
-    "section": "Attacking hold and wait",
-    "text": "Attacking hold and wait\n\nWhen a process requests a resource, it cannot be holding any others\nA process must request all of its resources at one time\nSee any downsides?\n\nMust know all needed locks a priori\nWill likely decrease concurrency\nPoor utilization: resources held long before they’re used\nStarvation: a process needing many popular resources may never get them all at once"
-  },
-  {
-    "objectID": "day15.html#attacking-no-preemption",
-    "href": "day15.html#attacking-no-preemption",
-    "title": "CSC 4553",
-    "section": "Attacking no preemption",
-    "text": "Attacking no preemption\n\nIf a process holding resources requests one that can’t be granted, it releases everything it holds\nRestarted only when it can regain its old resources plus the new\nDownsides?\n\nLivelock: processes repeatedly release and retry, but none make progress\nOnly works for resources whose state can be saved/restored\nMust roll back any partial work before releasing\nStarvation is possible"
-  },
-  {
-    "objectID": "day15.html#attacking-circular-wait",
-    "href": "day15.html#attacking-circular-wait",
-    "title": "CSC 4553",
-    "section": "Attacking circular wait",
-    "text": "Attacking circular wait\n\nHow could you prevent by focusing on the circular wait requirement?\nImpose a total ordering of all resource types\n\nFor example, resource types R1, R2, …, Rn have ordering R1 &lt; R2 &lt; … &lt; Rn\nA process that needs multiple resources must request them in increasing order of enumeration\n\nDownsides?\n\nMay be difficult to impose a meaningful ordering\nMay lead to reduced concurrency"
-  },
-  {
-    "objectID": "day15.html#fix-the-transfer",
-    "href": "day15.html#fix-the-transfer",
-    "title": "CSC 4553",
-    "section": "Fix the transfer",
-    "text": "Fix the transfer\n\n\nvoid transfer(account *a, account *b, int amt) {\n  pthread_mutex_lock(&a-&gt;lock);\n  pthread_mutex_lock(&b-&gt;lock);\n  a-&gt;balance -= amt;\n  b-&gt;balance += amt;\n  pthread_mutex_unlock(&b-&gt;lock);\n  pthread_mutex_unlock(&a-&gt;lock);\n}\n\n\n\n\nThink: Rewrite transfer() so it can never deadlock. Think of different answers for each of: breaking no preemption, hold and wait, and circular wait.\nDiscuss: Compare with a neighbor. Then extend it: transfer_many(account *accts[], int n) must lock all n accounts before moving money.\n\n\n\nTiming: ~2 min think, ~4 min pair, ~3 min share.\nFix: break circular wait by locking in a global order — every account gets a unique id (or compare addresses):\nvoid transfer(account *a, account *b, int amt) {\n  account *first  = (a-&gt;id &lt; b-&gt;id) ? a : b;\n  account *second = (a-&gt;id &lt; b-&gt;id) ? b : a;\n  pthread_mutex_lock(&first-&gt;lock);\n  pthread_mutex_lock(&second-&gt;lock);\n  a-&gt;balance -= amt;\n  b-&gt;balance += amt;\n  pthread_mutex_unlock(&second-&gt;lock);\n  pthread_mutex_unlock(&first-&gt;lock);\n}\n\nUnlock order doesn’t matter for deadlock — only acquisition order does. Worth asking.\na == b: still self-blocks on the second lock. Need an early check (callback to “push it further” #2).\ntransfer_many: sort accts by id, then lock in order (and skip duplicates). Same idea the Linux filemap.c comment on the summary slide documents.\nAlternative answers to accept and discuss: a single global lock (breaks hold and wait — correct but serializes every transfer); trylock-and-back-off (breaks no preemption — works, but can livelock).\n\nHold and wait: wrap the acquisitions in a global lock so they happen atomically.\npthread_mutex_lock(&global_lock);\npthread_mutex_lock(&a-&gt;lock);\npthread_mutex_lock(&b-&gt;lock);\npthread_mutex_unlock(&global_lock);\n// ... move money, unlock a and b\n\nCost: must know every lock up front; all lock acquisition is serialized; locks held longer than needed.\nAsk: why can global_lock be released before the transfer finishes? (It only guards acquisition.)\n\nNo preemption: trylock the second lock; on failure, give back the first and retry.\ntop:\n  pthread_mutex_lock(&a-&gt;lock);\n  if (pthread_mutex_trylock(&b-&gt;lock) != 0) {\n    pthread_mutex_unlock(&a-&gt;lock);\n    goto top;\n  }\n  // ... move money, unlock both\n\nCost: livelock — two opposite transfers can grab, fail, release in lockstep forever. Fix with a random back-off before goto top.\nWorks here only because nothing was modified between the two acquisitions; otherwise that work must be undone first.\ntransfer_many: same pattern, but on any trylock failure release all locks held so far."
-  },
-  {
-    "objectID": "day15.html#deadlock-prevention-summary",
-    "href": "day15.html#deadlock-prevention-summary",
-    "title": "CSC 4553",
-    "section": "Deadlock prevention summary",
-    "text": "Deadlock prevention summary\n\nWhich approach is best?\n\nAttacking mutual exclusion is generally not feasible\nAttacking hold and wait is wasteful and requires prescience\nAttacking no preemption is difficult due to non-preemptable resources, and risks livelock\nAttacking circular wait is practical but may reduce concurrency - often the best choice and most used"
-  },
-  {
-    "objectID": "day15.html#dining-philosophers",
-    "href": "day15.html#dining-philosophers",
-    "title": "CSC 4553",
-    "section": "Dining philosophers",
-    "text": "Dining philosophers\n\n\n\nFive philosophers around a table, one fork between each pair\nTo eat, a philosopher needs both adjacent forks\n\nvoid philosopher(int i) {\n  while (1) {\n    think();\n    lock(fork[i]);            // left\n    lock(fork[(i + 1) % 5]);  // right\n    eat();\n    unlock(fork[(i + 1) % 5]);\n    unlock(fork[i]);\n  }\n}\n\n\n\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nF0\n\nF0\n\n\n\nP1\n\nP1\n\n\n\nF1\n\nF1\n\n\n\nP2\n\nP2\n\n\n\nF2\n\nF2\n\n\n\nP3\n\nP3\n\n\n\nF3\n\nF3\n\n\n\nP4\n\nP4\n\n\n\nF4\n\nF4"
-  },
-  {
-    "objectID": "day15.html#break-one-condition",
-    "href": "day15.html#break-one-condition",
-    "title": "CSC 4553",
-    "section": "Break one condition",
-    "text": "Break one condition\n\n\n\nThink: How can the philosophers deadlock? Point to each of the four conditions in the code.\nDiscuss: For each condition, explain how it can be broken. Change the code (or the rules) so deadlock is impossible.\n\nMutual exclusion\nHold and wait\nNo preemption\nCircular wait\n\nAlso consider the cost of your fixes\n\n\n\n\nvoid philosopher(int i) {\n  while (1) {\n    think();\n    lock(fork[i]);         // left\n    lock(fork[(i+1) % 5]); // right\n    eat();\n    unlock(fork[(i+1) % 5]);\n    unlock(fork[i]);\n  }\n}\n\n\nTiming: ~2 min think, ~5 min groups, ~6 min share (go around the four conditions in order).\nDeadlock: every philosopher grabs their left fork at the same time; each then waits forever for the right fork, which their neighbor holds. RAG is a 5-cycle.\nFixes and costs, by condition: - Mutual exclusion: share forks / buy more forks. Usually “you can’t” — a fork in use can’t be shared. Good to have a group discover this is the dead end, which matches the summary slide. - Hold and wait: pick up both forks atomically (a global mutex around the two lock calls, or a waiter who only hands out both). Cost: less concurrency — neighbors of a slow grabber wait; global lock serializes picking up. - No preemption: trylock the right fork; if it fails, put the left fork down and retry later. Cost: livelock (everyone grabs left, fails, drops, repeats in lockstep) and starvation. Random back-off helps. - Circular wait: one philosopher (e.g., P4) picks up right then left — equivalently, always lock the lower-numbered fork first. Cost: small; mild unfairness. This is the textbook answer and the same lock ordering as the transfer fix.\nExtra alternative to accept: allow at most 4 philosophers at the table (a counting semaphore initialized to 4). Ask which condition it breaks — it prevents the cycle from closing (circular wait), since at least one philosopher can always get both forks. Callback to counting semaphores from day 13."
-  },
-  {
-    "objectID": "day15.html#section",
-    "href": "day15.html#section",
-    "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
-  },
-  {
-    "objectID": "day15.html#deadlock-avoidance",
-    "href": "day15.html#deadlock-avoidance",
+    "objectID": "day16.html#deadlock-avoidance",
+    "href": "day16.html#deadlock-avoidance",
     "title": "CSC 4553",
     "section": "Deadlock avoidance",
     "text": "Deadlock avoidance\n\nAll of the prevention techniques can be heavy-handed, reducing concurrency and overall system throughput\nWhat if we had more information about process resource needs before allocation?\n\nCould we make smarter decisions about resource allocation?\n\nThis is the idea behind deadlock avoidance"
   },
   {
-    "objectID": "day15.html#avoidance-via-resource-allocation-graph",
-    "href": "day15.html#avoidance-via-resource-allocation-graph",
+    "objectID": "day16.html#avoidance-via-resource-allocation-graph",
+    "href": "day16.html#avoidance-via-resource-allocation-graph",
     "title": "CSC 4553",
     "section": "Avoidance via resource-allocation graph",
     "text": "Avoidance via resource-allocation graph\n\n\n\nIntroduce the idea of a claim edge (dashed line) from a process to a resource\n\nIndicates that the process may request that resource in the future\n\nThe system can maintain this graph, and only grant resources that will not create a cycle\n\ne.g., if T3 requests R2, granting it would create the cycle T1 ⇢ R2 → T3 ⇢ R1 → T1, so it must wait\n\nAny downsides / limitations?\n\nOverhead of maintaining the graph and checking for cycles\nOnly applicable to single instance resources\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nT1\n\nThread 1\n\n\n\nR2\n\nResource 2\n\n\n\nT1-&gt;R2\n\n\nmay request\n\n\n\nT3\n\nThread 3\n\n\n\nR1\n\nResource 1\n\n\n\nT3-&gt;R1\n\n\nmay request\n\n\n\nT3-&gt;R2\n\n\nmay request\n\n\n\nR1-&gt;T1\n\n\nheld by"
   },
   {
-    "objectID": "day15.html#deadlock-avoidance-in-practice",
-    "href": "day15.html#deadlock-avoidance-in-practice",
+    "objectID": "day16.html#deadlock-avoidance-in-practice",
+    "href": "day16.html#deadlock-avoidance-in-practice",
     "title": "CSC 4553",
     "section": "Deadlock avoidance in practice",
     "text": "Deadlock avoidance in practice\n\nDijkstra’s Banker’s algorithm is the textbook example — each process declares its max resource needs, and requests are only granted if the resulting state is “safe.” Not used in practice: overhead plus the prescience requirement\nResource-allocation graph with claim edges sees occasional use in constrained settings (e.g., embedded systems where needs are predictable)"
   },
   {
-    "objectID": "day15.html#detecting-and-recovering-from-deadlock",
-    "href": "day15.html#detecting-and-recovering-from-deadlock",
+    "objectID": "day16.html#detecting-and-recovering-from-deadlock",
+    "href": "day16.html#detecting-and-recovering-from-deadlock",
     "title": "CSC 4553",
     "section": "Detecting and recovering from deadlock",
     "text": "Detecting and recovering from deadlock\n\nAllow deadlocks to occur, then detect and recover\nIn some cases, recovery is pretty simple. If your machine froze once per year (maybe it does?) what would you do?\n\nReboot\n\nWhat scenarios do you think complex detection and recovery would make sense?\n\nSystems with high availability requirements where manual intervention is costly or impractical\n\ntelecommunications systems, financial transaction systems, healthcare systems\ncritical infrastructure systems"
   },
   {
-    "objectID": "day15.html#detection",
-    "href": "day15.html#detection",
+    "objectID": "day16.html#detection",
+    "href": "day16.html#detection",
     "title": "CSC 4553",
     "section": "Detection",
     "text": "Detection\n\nUse a wait-for graph: a simplified resource-allocation graph that removes resource nodes\n\nAn edge from process \\(P_i\\) to \\(P_j\\) indicates that \\(P_i\\) is waiting for a resource held by \\(P_j\\)\nA cycle in this graph indicates a deadlock\n\\(O(n^2)\\) algorithm to search for cycles (beyond the cost of maintaining the graph itself)\nOnly applies to single instance resources"
   },
   {
-    "objectID": "day15.html#detection-contd",
-    "href": "day15.html#detection-contd",
+    "objectID": "day16.html#detection-contd",
+    "href": "day16.html#detection-contd",
     "title": "CSC 4553",
     "section": "Detection (cont’d)",
     "text": "Detection (cont’d)\n\n\nResource-allocation graph\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nR2\n\nR2\n\n\n\nP0-&gt;R2\n\n\n\n\n\nP1\n\nP1\n\n\n\nP1-&gt;R2\n\n\n\n\n\nP2\n\nP2\n\n\n\nP2-&gt;R2\n\n\n\n\n\nP3\n\nP3\n\n\n\nR3\n\nR3\n\n\n\nP3-&gt;R3\n\n\n\n\n\nP4\n\nP4\n\n\n\nP4-&gt;R3\n\n\n\n\n\nP5\n\nP5\n\n\n\nR5\n\nR5\n\n\n\nP5-&gt;R5\n\n\n\n\n\nP6\n\nP6\n\n\n\nR4\n\nR4\n\n\n\nP6-&gt;R4\n\n\n\n\n\nR1\n\nR1\n\n\n\nR1-&gt;P1\n\n\n\n\n\nR2-&gt;P3\n\n\n\n\n\nR3-&gt;P5\n\n\n\n\n\nR4-&gt;P3\n\n\n\n\n\nR5-&gt;P6\n\n\n\n\n\nR6\n\nR6\n\n\n\nR6-&gt;P2\n\n\n\n\n\n\n\n\n\n\n\n\n\nWait-for graph\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nP3\n\nP3\n\n\n\nP0-&gt;P3\n\n\n\n\n\nP1\n\nP1\n\n\n\nP1-&gt;P3\n\n\n\n\n\nP2\n\nP2\n\n\n\nP2-&gt;P3\n\n\n\n\n\nP5\n\nP5\n\n\n\nP3-&gt;P5\n\n\n\n\n\nP4\n\nP4\n\n\n\nP4-&gt;P5\n\n\n\n\n\nP6\n\nP6\n\n\n\nP5-&gt;P6\n\n\n\n\n\nP6-&gt;P3\n\n\n\n\n\n\n\n\n\n\n\n\nAsk students to build the wait-for graph before revealing it: for each request edge P -&gt; R, add P -&gt; (holder of R).\nCycle P3 -&gt; P5 -&gt; P6 -&gt; P3 means P3, P5, P6 are deadlocked. P0, P1, P2 (waiting on P3) and P4 (waiting on P5) aren’t in the cycle but are stuck forever anyway, since they wait on deadlocked processes. Good question: does killing P0 help? (No.) Which single process would you kill? (Any of P3, P5, P6; P3 frees the most since it also holds R2.)"
   },
   {
-    "objectID": "day15.html#detection-contd-1",
-    "href": "day15.html#detection-contd-1",
+    "objectID": "day16.html#detection-contd-1",
+    "href": "day16.html#detection-contd-1",
     "title": "CSC 4553",
     "section": "Detection (cont’d)",
     "text": "Detection (cont’d)\n\nFor multiple instance resources, we can use an algorithm similar to the Banker’s algorithm to detect deadlock\nQuestion: How often should we run the detection algorithm?\n\nToo often: wasteful overhead\nNot often enough: long delays before recovery\nWhat if we run it when a process requests a resource?\n\nCould allow us to assign blame for deadlock to the requesting process\n\nHeuristically (CPU utilization, etc.)\n\nLess overhead, but harder to assign blame"
   },
   {
-    "objectID": "day15.html#recovery-options",
-    "href": "day15.html#recovery-options",
+    "objectID": "day16.html#recovery-options",
+    "href": "day16.html#recovery-options",
     "title": "CSC 4553",
     "section": "Recovery options",
     "text": "Recovery options\n\nProcess termination\n\nAbort all deadlocked processes (brute force)\nAbort one process at a time until deadlock is resolved\n\nHow to choose which process to abort?\n\nPriority, time running, resources used, etc.\n\n\n\nResource preemption\n\nTemporarily take resources away from some processes and give to others until deadlock is resolved\nHighly dependent on the resource type\nRollback problem - processes may need to be rolled back to a safe state before resources can be reallocated\nStarvation problem - same victims may be chosen repeatedly"
   },
   {
-    "objectID": "day15.html#pick-the-policy",
-    "href": "day15.html#pick-the-policy",
+    "objectID": "day16.html#pick-the-policy",
+    "href": "day16.html#pick-the-policy",
     "title": "CSC 4553",
     "section": "Pick the policy",
     "text": "Pick the policy\n\nFor each system below, which deadlock strategy fits best — and why?\n\nFlight control software on a commercial aircraft\nA university course-registration system during peak enrollment\nYour personal laptop running a browser, editor, and Slack\n\nFor your pick, name the cost you’re accepting (lost concurrency? overhead? user-visible failures?)\n\n\nGoals: get them to weigh contention, cost of failure, and predictability. Push back hard if anyone picks avoidance — it’s almost never the right answer outside narrow embedded niches.\n\n\nPrevention via strict resource/lock ordering. Failure cost is catastrophic, workloads are well-characterized, throughput is secondary. (Students may say “avoidance” — push them: who declares max needs? what’s the runtime cost on every request?) Cost accepted: lost concurrency (threads sometimes grab locks earlier or hold them longer than needed to respect the order) and design/verification effort to define and audit the ordering across the whole codebase.\n\n\nDetection and recovery: the DB builds a wait-for graph and aborts one transaction when it finds a cycle; the client retries. Application code can also lock rows in a consistent order (e.g., by primary key) to make deadlocks rarer. Contention is high, but an aborted transaction is cheap to recover from. Cost accepted: user-visible failures (a student sees “please try again”), wasted work from rolled-back transactions, and overhead of building and checking the wait-for graph.\n\n\nOstrich. Deadlocks rare; reboot/kill is cheap; users won’t tolerate any added overhead. Cost accepted: an occasional hang the user has to fix by force-quitting an app or rebooting, possibly losing unsaved work.\n\n\nPush them on: “what changes your answer?” — e.g., what if the laptop runs medical software?"
   },
   {
-    "objectID": "day15.html#section-1",
-    "href": "day15.html#section-1",
+    "objectID": "day16.html#section",
+    "href": "day16.html#section",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day16.html#questions-to-consider",
+    "href": "day16.html#questions-to-consider",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhat are the requirements for memory that the OS must accomplish?\nWhat abstraction should the OS provide to processes?\nWhy does a memory hierarchy exist, and what forces does it create for the OS?"
+  },
+  {
+    "objectID": "day16.html#memory-overview",
+    "href": "day16.html#memory-overview",
+    "title": "CSC 4553",
+    "section": "Memory overview",
+    "text": "Memory overview\n\nMemory is required by all processes\nWhat users (developers) want:\n\nInfinite space, private, fast, and cheap\n\nReality: All memory is limited, only some is fast (and $$$), others are slow (but $)\n\nCreates a memory hierarchy\nSmall, fast, expensive (registers, cache, RAM) → Large, slow, cheap (ssd, disk, tape)\nIn order to support multiprogramming we must share and utilize memory hierarchy intelligently"
+  },
+  {
+    "objectID": "day16.html#memory-hierarchy",
+    "href": "day16.html#memory-hierarchy",
+    "title": "CSC 4553",
+    "section": "Memory hierarchy",
+    "text": "Memory hierarchy"
+  },
+  {
+    "objectID": "day16.html#memory-preliminaries",
+    "href": "day16.html#memory-preliminaries",
+    "title": "CSC 4553",
+    "section": "Memory preliminaries",
+    "text": "Memory preliminaries\n\nRemember: A process’s code & data must both be in memory\n\nCPU must fetch both as part of its instruction-execution cycle\n\nWhat memory can a CPU access directly?\n\nRegisters, caches, RAM\nTherefore, any data or instruction must be in these direct access devices in order to operate on them\n\nIn this discussion we’re focusing on RAM (caches + registers are hardware problems)\nMemory is an array of words (width of memory), kind of"
+  },
+  {
+    "objectID": "day16.html#memory-requirements",
+    "href": "day16.html#memory-requirements",
+    "title": "CSC 4553",
+    "section": "Memory requirements",
+    "text": "Memory requirements\n\nWhat does the OS need to provide?\nOld days?\n\nJust the OS libraries and a single process got the rest of the system memory\n\nBetween multiple processes? Processes and the kernel?\n\nTransparency: we don’t want processes to be aware of the virtualization.\n\nThey need to be presented with a simple address space\n\nEfficiency: memory is expensive and scarce\n\nNeed to be efficient in both space and time\n\nProtection / isolation: we need to ensure that processes can’t access other process’s address space (or the kernel’s)"
+  },
+  {
+    "objectID": "day16.html#memory-requirements-contd",
+    "href": "day16.html#memory-requirements-contd",
+    "title": "CSC 4553",
+    "section": "Memory requirements (cont’d)",
+    "text": "Memory requirements (cont’d)\n\nFrom a process point of view how should we address things?\n\nAbstraction, we need an address space\n\nWe present an address space to processes that is their unique view of the system memory\n\nCode, Heap, Stack, etc.\nProcess sees fake (virtual) addresses\nQ: We know that heap & stack grow towards one another. How does it work when we have multiple threads?"
+  },
+  {
+    "objectID": "day16.html#section-1",
+    "href": "day16.html#section-1",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day16.html#questions-to-consider-1",
+    "href": "day16.html#questions-to-consider-1",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nHow can the OS provide isolation between processes?\nWhat are the trade-offs in when we bind virtual addresses to physical addresses?\nHow can hardware help the OS manage memory efficiently?"
+  },
+  {
+    "objectID": "day16.html#base-and-bounds",
+    "href": "day16.html#base-and-bounds",
+    "title": "CSC 4553",
+    "section": "Base and bounds",
+    "text": "Base and bounds\n\nOkay, we’re going to lie to processes. How should we achieve this abstraction?\nFirst approach: base and bounds (or base and limit) registers\n\nBase: smallest address; bounds: size of address space\nThis can help with protection / isolation\nWhere should the values be stored?\nThe CPU needs to check for every memory access\n\nStored in the PCB (we just added state that a context switch needs to account for)"
+  },
+  {
+    "objectID": "day16.html#base-and-bounds-contd",
+    "href": "day16.html#base-and-bounds-contd",
+    "title": "CSC 4553",
+    "section": "Base and bounds (cont’d)",
+    "text": "Base and bounds (cont’d)\n\nWhat will the OS need to keep track of?\n\nWhen a process is first run\n\nNeed to find space for it (i.e., must be tracking free space)\n\nWhen a process terminates\n\nReturn used memory to the free list\nClean up any data structures used to manage memory\n\nOn context switch?\n\nCPU only has one set of base and bounds registers\n\nWhen OS wants to relocate a process\n\nSet new registers\n\nWhen a process tries to address outside of its bound?\n\nexception handlers"
+  },
+  {
+    "objectID": "day16.html#base-and-bounds-contd-1",
+    "href": "day16.html#base-and-bounds-contd-1",
+    "title": "CSC 4553",
+    "section": "Base and bounds (cont’d)",
+    "text": "Base and bounds (cont’d)\n\nBase and bounds is simple, but has some issues:\n\nExternal fragmentation: over time, as processes are loaded and unloaded, we can end up with slivers of memory that are not usable for new processes\nRelocation is expensive: moving a process in memory requires copying all of its data\n\nTo address these issues, we can use more sophisticated memory management techniques, such as paging and segmentation"
+  },
+  {
+    "objectID": "day16.html#memory-address-binding",
+    "href": "day16.html#memory-address-binding",
+    "title": "CSC 4553",
+    "section": "Memory address binding",
+    "text": "Memory address binding\n\nWhen does the OS bind virtual addresses to physical addresses?\n\nCompile time: if we know where the process will be loaded, we can bind addresses at compile time\n\nNot flexible\nif you need to change anything, you need to recompile\n\nLoad time: we can bind addresses when the process is loaded into memory\n\nMore flexible, but still not ideal\nIf you need to move the process, you need to reload it\n\nRuntime: we can bind addresses during execution, which allows for maximum flexibility and is the most common approach\n\nRequires some help"
+  },
+  {
+    "objectID": "day16.html#runtime-address-binding",
+    "href": "day16.html#runtime-address-binding",
+    "title": "CSC 4553",
+    "section": "Runtime address binding",
+    "text": "Runtime address binding\n\nTo support runtime address binding, we need to use a memory management unit (MMU)\n\nHardware component that translates virtual addresses to physical addresses on-the-fly\nCan also provide protection by checking access rights and ensuring that processes cannot access memory outside of their allocated space\n\nThe OS needs to maintain a data structure (e.g., page table) that the MMU can use for translation\nThis allows processes to have a uniform address space (e.g., starting at 0 and going to “max”)"
+  },
+  {
+    "objectID": "day16.html#section-2",
+    "href": "day16.html#section-2",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
