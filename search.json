@@ -1,175 +1,126 @@
 [
   {
-    "objectID": "day16.html#admin",
-    "href": "day16.html#admin",
+    "objectID": "day17.html#admin",
+    "href": "day17.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nDeadlines…\nMid-semester survey on Canvas"
+    "text": "Admin\n\nLab due Friday, 21:00\nQuiz due Monday, 21:00\nMid-semester survey on Canvas"
   },
   {
-    "objectID": "day16.html#deadlock-avoidance",
-    "href": "day16.html#deadlock-avoidance",
+    "objectID": "day17.html#questions-to-consider",
+    "href": "day17.html#questions-to-consider",
     "title": "CSC 4553",
-    "section": "Deadlock avoidance",
-    "text": "Deadlock avoidance\n\nAll of the prevention techniques can be heavy-handed, reducing concurrency and overall system throughput\nWhat if we had more information about process resource needs before allocation?\n\nCould we make smarter decisions about resource allocation?\n\nThis is the idea behind deadlock avoidance"
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nHow can we reduce memory footprint without limiting functionality?\nWhat are the benefits and challenges of sharing code across processes?\nWhat are the trade-offs in swapping processes to disk?"
   },
   {
-    "objectID": "day16.html#avoidance-via-resource-allocation-graph",
-    "href": "day16.html#avoidance-via-resource-allocation-graph",
+    "objectID": "day17.html#dynamic-loading",
+    "href": "day17.html#dynamic-loading",
     "title": "CSC 4553",
-    "section": "Avoidance via resource-allocation graph",
-    "text": "Avoidance via resource-allocation graph\n\n\n\nIntroduce the idea of a claim edge (dashed line) from a process to a resource\n\nIndicates that the process may request that resource in the future\n\nThe system can maintain this graph, and only grant resources that will not create a cycle\n\ne.g., if T3 requests R2, granting it would create the cycle T1 ⇢ R2 → T3 ⇢ R1 → T1, so it must wait\n\nAny downsides / limitations?\n\nOverhead of maintaining the graph and checking for cycles\nOnly applicable to single instance resources\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nT1\n\nThread 1\n\n\n\nR2\n\nResource 2\n\n\n\nT1-&gt;R2\n\n\nmay request\n\n\n\nT3\n\nThread 3\n\n\n\nR1\n\nResource 1\n\n\n\nT3-&gt;R1\n\n\nmay request\n\n\n\nT3-&gt;R2\n\n\nmay request\n\n\n\nR1-&gt;T1\n\n\nheld by"
+    "section": "Dynamic loading",
+    "text": "Dynamic loading\n\nLoad parts of a process only when needed\n\nWhy?\n\nOtherwise processes must fit entirely in physical memory\n\n\nGranularity: per function or per module (shared library)\nSmaller footprint, faster startup, more complexity\nWhere would this help most?\n\nRarely used code (error handlers), plugins\n\n\n\n\nFunction level: load a function when it’s first called. Module level: load a shared library when it’s first used.\nError-handling code is a good example: large, but seldom executed in a normal run. Plugins/extensions may never be used in a given execution."
   },
   {
-    "objectID": "day16.html#deadlock-avoidance-in-practice",
-    "href": "day16.html#deadlock-avoidance-in-practice",
+    "objectID": "day17.html#dynamic-linking",
+    "href": "day17.html#dynamic-linking",
     "title": "CSC 4553",
-    "section": "Deadlock avoidance in practice",
-    "text": "Deadlock avoidance in practice\n\nDijkstra’s Banker’s algorithm is the textbook example — each process declares its max resource needs, and requests are only granted if the resulting state is “safe.” Not used in practice: overhead plus the prescience requirement\nResource-allocation graph with claim edges sees occasional use in constrained settings (e.g., embedded systems where needs are predictable)"
+    "section": "Dynamic linking",
+    "text": "Dynamic linking\n\nLink libraries at runtime instead of compile time\nProcesses share one copy of library code in memory\nLibraries can be updated without recompiling\nNeeds OS + dynamic linker/loader support\nWhat could go wrong?\n\nMissing or incompatible library: fails to start or crashes\nLibrary updated while in use\n\n\n\n\nWe’ve already seen shared libraries in pmap output.\nThe complexity this introduces is often called “DLL Hell.”\nIf one process updates a shared library while another is using it, the result can be unpredictable behavior or crashes."
   },
   {
-    "objectID": "day16.html#detecting-and-recovering-from-deadlock",
-    "href": "day16.html#detecting-and-recovering-from-deadlock",
+    "objectID": "day17.html#swapping",
+    "href": "day17.html#swapping",
     "title": "CSC 4553",
-    "section": "Detecting and recovering from deadlock",
-    "text": "Detecting and recovering from deadlock\n\nAllow deadlocks to occur, then detect and recover\nIn some cases, recovery is pretty simple. If your machine froze once per year (maybe it does?) what would you do?\n\nReboot\n\nWhat scenarios do you think complex detection and recovery would make sense?\n\nSystems with high availability requirements where manual intervention is costly or impractical\n\ntelecommunications systems, financial transaction systems, healthcare systems\ncritical infrastructure systems"
+    "section": "Swapping",
+    "text": "Swapping\n\nMove an entire process from memory to a backing store (disk)\nQ: Why swap?\n\nRun more processes than RAM can hold\n\nQ: When do we swap?\n\nWhen processes don’t all fit in physical memory\n\nQ: When swapping back in, where does the process go?\n\nDepends on memory binding\nRuntime binding: anywhere\n\n\n\nWith runtime binding the process can be placed anywhere in memory, which gives maximum flexibility.\nBoard drawing Walk through it: memory is full, P2 needs to run, so the OS picks a victim (P1), writes its whole image to disk, then reads P2 into the space P1 just gave up. P2 doesn’t have to land where it was before. That’s only possible with runtime binding. The cost is two full transfers of the process image, which sets up the next slide."
   },
   {
-    "objectID": "day16.html#detection",
-    "href": "day16.html#detection",
+    "objectID": "day17.html#pick-the-victim",
+    "href": "day17.html#pick-the-victim",
     "title": "CSC 4553",
-    "section": "Detection",
-    "text": "Detection\n\nUse a wait-for graph: a simplified resource-allocation graph that removes resource nodes\n\nAn edge from process \\(P_i\\) to \\(P_j\\) indicates that \\(P_i\\) is waiting for a resource held by \\(P_j\\)\nA cycle in this graph indicates a deadlock\n\\(O(n^2)\\) algorithm to search for cycles (beyond the cost of maintaining the graph itself)\nOnly applies to single instance resources"
+    "section": "Pick the victim",
+    "text": "Pick the victim\n\nMemory is full and P2 needs to run\nYou must swap a process out\nWhat would you want to know about each process before choosing?\n\n\nAnswers to draw out:\n\nSize: a big process frees more space but takes longer to transfer.\nPriority, and how soon it will run again: don’t evict something that’s about to be scheduled.\nTime since it last ran: an idle process is a good candidate.\nState: a process that’s blocked anyway is attractive, unless it has I/O in progress. That leads into the next slide.\n\nPoint out that “least recently used” comes up again with page replacement."
   },
   {
-    "objectID": "day16.html#detection-contd",
-    "href": "day16.html#detection-contd",
+    "objectID": "day17.html#swapping-caveats",
+    "href": "day17.html#swapping-caveats",
     "title": "CSC 4553",
-    "section": "Detection (cont’d)",
-    "text": "Detection (cont’d)\n\n\nResource-allocation graph\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nR2\n\nR2\n\n\n\nP0-&gt;R2\n\n\n\n\n\nP1\n\nP1\n\n\n\nP1-&gt;R2\n\n\n\n\n\nP2\n\nP2\n\n\n\nP2-&gt;R2\n\n\n\n\n\nP3\n\nP3\n\n\n\nR3\n\nR3\n\n\n\nP3-&gt;R3\n\n\n\n\n\nP4\n\nP4\n\n\n\nP4-&gt;R3\n\n\n\n\n\nP5\n\nP5\n\n\n\nR5\n\nR5\n\n\n\nP5-&gt;R5\n\n\n\n\n\nP6\n\nP6\n\n\n\nR4\n\nR4\n\n\n\nP6-&gt;R4\n\n\n\n\n\nR1\n\nR1\n\n\n\nR1-&gt;P1\n\n\n\n\n\nR2-&gt;P3\n\n\n\n\n\nR3-&gt;P5\n\n\n\n\n\nR4-&gt;P3\n\n\n\n\n\nR5-&gt;P6\n\n\n\n\n\nR6\n\nR6\n\n\n\nR6-&gt;P2\n\n\n\n\n\n\n\n\n\n\n\n\n\nWait-for graph\n\n\n\n\n\n\n\n\n\nP0\n\nP0\n\n\n\nP3\n\nP3\n\n\n\nP0-&gt;P3\n\n\n\n\n\nP1\n\nP1\n\n\n\nP1-&gt;P3\n\n\n\n\n\nP2\n\nP2\n\n\n\nP2-&gt;P3\n\n\n\n\n\nP5\n\nP5\n\n\n\nP3-&gt;P5\n\n\n\n\n\nP4\n\nP4\n\n\n\nP4-&gt;P5\n\n\n\n\n\nP6\n\nP6\n\n\n\nP5-&gt;P6\n\n\n\n\n\nP6-&gt;P3\n\n\n\n\n\n\n\n\n\n\n\n\nAsk students to build the wait-for graph before revealing it: for each request edge P -&gt; R, add P -&gt; (holder of R).\nCycle P3 -&gt; P5 -&gt; P6 -&gt; P3 means P3, P5, P6 are deadlocked. P0, P1, P2 (waiting on P3) and P4 (waiting on P5) aren’t in the cycle but are stuck forever anyway, since they wait on deadlocked processes. Good question: does killing P0 help? (No.) Which single process would you kill? (Any of P3, P5, P6; P3 frees the most since it also holds R2.)"
+    "section": "Swapping caveats",
+    "text": "Swapping caveats\n\nDisk is slow: be careful who, how, and when we swap\n\nSwap time is proportional to memory swapped\nTransfer time dominates, not context switching\n\nProcess state matters\n\nE.g., processes blocked on I/O\n\nIn reality: we swap pages, not whole processes (more later)\n\n\n\nIf a process is blocked on I/O: 1) swapping uses the disk and further delays that I/O, 2) a direct I/O request may return into memory that now belongs to another process.\nPrograms keep growing, so swapping is expensive. E.g., a 1GB program takes ~10 sec per swap to a spinning disk.\nSwapping entire processes is too costly and usually unnecessary."
   },
   {
-    "objectID": "day16.html#detection-contd-1",
-    "href": "day16.html#detection-contd-1",
-    "title": "CSC 4553",
-    "section": "Detection (cont’d)",
-    "text": "Detection (cont’d)\n\nFor multiple instance resources, we can use an algorithm similar to the Banker’s algorithm to detect deadlock\nQuestion: How often should we run the detection algorithm?\n\nToo often: wasteful overhead\nNot often enough: long delays before recovery\nWhat if we run it when a process requests a resource?\n\nCould allow us to assign blame for deadlock to the requesting process\n\nHeuristically (CPU utilization, etc.)\n\nLess overhead, but harder to assign blame"
-  },
-  {
-    "objectID": "day16.html#recovery-options",
-    "href": "day16.html#recovery-options",
-    "title": "CSC 4553",
-    "section": "Recovery options",
-    "text": "Recovery options\n\nProcess termination\n\nAbort all deadlocked processes (brute force)\nAbort one process at a time until deadlock is resolved\n\nHow to choose which process to abort?\n\nPriority, time running, resources used, etc.\n\n\n\nResource preemption\n\nTemporarily take resources away from some processes and give to others until deadlock is resolved\nHighly dependent on the resource type\nRollback problem - processes may need to be rolled back to a safe state before resources can be reallocated\nStarvation problem - same victims may be chosen repeatedly"
-  },
-  {
-    "objectID": "day16.html#pick-the-policy",
-    "href": "day16.html#pick-the-policy",
-    "title": "CSC 4553",
-    "section": "Pick the policy",
-    "text": "Pick the policy\n\nFor each system below, which deadlock strategy fits best — and why?\n\nFlight control software on a commercial aircraft\nA university course-registration system during peak enrollment\nYour personal laptop running a browser, editor, and Slack\n\nFor your pick, name the cost you’re accepting (lost concurrency? overhead? user-visible failures?)\n\n\nGoals: get them to weigh contention, cost of failure, and predictability. Push back hard if anyone picks avoidance — it’s almost never the right answer outside narrow embedded niches.\n\n\nPrevention via strict resource/lock ordering. Failure cost is catastrophic, workloads are well-characterized, throughput is secondary. (Students may say “avoidance” — push them: who declares max needs? what’s the runtime cost on every request?) Cost accepted: lost concurrency (threads sometimes grab locks earlier or hold them longer than needed to respect the order) and design/verification effort to define and audit the ordering across the whole codebase.\n\n\nDetection and recovery: the DB builds a wait-for graph and aborts one transaction when it finds a cycle; the client retries. Application code can also lock rows in a consistent order (e.g., by primary key) to make deadlocks rarer. Contention is high, but an aborted transaction is cheap to recover from. Cost accepted: user-visible failures (a student sees “please try again”), wasted work from rolled-back transactions, and overhead of building and checking the wait-for graph.\n\n\nOstrich. Deadlocks rare; reboot/kill is cheap; users won’t tolerate any added overhead. Cost accepted: an occasional hang the user has to fix by force-quitting an app or rebooting, possibly losing unsaved work.\n\n\nPush them on: “what changes your answer?” — e.g., what if the laptop runs medical software?"
-  },
-  {
-    "objectID": "day16.html#section",
-    "href": "day16.html#section",
+    "objectID": "day17.html#section",
+    "href": "day17.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day16.html#questions-to-consider",
-    "href": "day16.html#questions-to-consider",
+    "objectID": "day17.html#questions-to-consider-1",
+    "href": "day17.html#questions-to-consider-1",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat are the requirements for memory that the OS must accomplish?\nWhat abstraction should the OS provide to processes?\nWhy does a memory hierarchy exist, and what forces does it create for the OS?"
+    "text": "Questions to consider\n\nHow do we keep track of free memory and decide where to place processes?\nWhat problems arise from fragmentation, and how can we address them?\nWhat are the trade-offs between different allocation strategies?"
   },
   {
-    "objectID": "day16.html#memory-overview",
-    "href": "day16.html#memory-overview",
+    "objectID": "day17.html#memory-allocation-strategies",
+    "href": "day17.html#memory-allocation-strategies",
     "title": "CSC 4553",
-    "section": "Memory overview",
-    "text": "Memory overview\n\nMemory is required by all processes\nWhat users (developers) want:\n\nInfinite space, private, fast, and cheap\n\nReality: All memory is limited, only some is fast (and $$$), others are slow (but $)\n\nCreates a memory hierarchy\nSmall, fast, expensive (registers, cache, RAM) → Large, slow, cheap (ssd, disk, tape)\nIn order to support multiprogramming we must share and utilize memory hierarchy intelligently"
+    "section": "Memory allocation strategies",
+    "text": "Memory allocation strategies\n\nHow do we find free memory for processes?\nHow do we keep track of free memory?\nWhich free block do we give to a process?"
   },
   {
-    "objectID": "day16.html#memory-hierarchy",
-    "href": "day16.html#memory-hierarchy",
+    "objectID": "day17.html#contiguous-allocation-1",
+    "href": "day17.html#contiguous-allocation-1",
     "title": "CSC 4553",
-    "section": "Memory hierarchy",
-    "text": "Memory hierarchy"
+    "section": "Contiguous allocation",
+    "text": "Contiguous allocation\n\nMemory is allocated in contiguous blocks\nFixed-sized partitions: one process each\n\nSimple but inflexible\n\nVariable-sized partitions: allocate exactly what’s needed\n\n\nWith fixed partitions, n partitions means at most n processes, and partition sizes may not match what processes need."
   },
   {
-    "objectID": "day16.html#memory-preliminaries",
-    "href": "day16.html#memory-preliminaries",
+    "objectID": "day17.html#variable-partitioning",
+    "href": "day17.html#variable-partitioning",
     "title": "CSC 4553",
-    "section": "Memory preliminaries",
-    "text": "Memory preliminaries\n\nRemember: A process’s code & data must both be in memory\n\nCPU must fetch both as part of its instruction-execution cycle\n\nWhat memory can a CPU access directly?\n\nRegisters, caches, RAM\nTherefore, any data or instruction must be in these direct access devices in order to operate on them\n\nIn this discussion we’re focusing on RAM (caches + registers are hardware problems)\nMemory is an array of words (width of memory), kind of"
+    "section": "Variable partitioning",
+    "text": "Variable partitioning\n\nAny obvious problems?\n\nExternal fragmentation: small free blocks that are too small to use\n\nAllocate processes until nothing fits in any “hole”\nThen what?\n\nRearrange memory: compaction\n\nThis is expensive\n\n\n\n\n\nFragmentation builds up over time as processes are loaded and unloaded.\nCompaction moves processes around to create enough contiguous space for the new process."
   },
   {
-    "objectID": "day16.html#memory-requirements",
-    "href": "day16.html#memory-requirements",
+    "objectID": "day17.html#allocation-strategies",
+    "href": "day17.html#allocation-strategies",
     "title": "CSC 4553",
-    "section": "Memory requirements",
-    "text": "Memory requirements\n\nWhat does the OS need to provide?\nOld days?\n\nJust the OS libraries and a single process got the rest of the system memory\n\nBetween multiple processes? Processes and the kernel?\n\nTransparency: we don’t want processes to be aware of the virtualization.\n\nThey need to be presented with a simple address space\n\nEfficiency: memory is expensive and scarce\n\nNeed to be efficient in both space and time\n\nProtection / isolation: we need to ensure that processes can’t access other process’s address space (or the kernel’s)"
+    "section": "Allocation strategies",
+    "text": "Allocation strategies\n\nWhich hole do we use for a new process?\nFirst fit: first hole that’s big enough\nBest fit: smallest hole that’s big enough\nWorst fit: largest hole\nDownsides?\n\nFirst fit: early holes get chewed up\nBest/worst fit: full scan\nNext fit: first fit, starting from the last allocation\n\n\n\nWith first fit, the early holes get chewed up, which slows down later searches."
   },
   {
-    "objectID": "day16.html#memory-requirements-contd",
-    "href": "day16.html#memory-requirements-contd",
+    "objectID": "day17.html#run-the-algorithms",
+    "href": "day17.html#run-the-algorithms",
     "title": "CSC 4553",
-    "section": "Memory requirements (cont’d)",
-    "text": "Memory requirements (cont’d)\n\nFrom a process point of view how should we address things?\n\nAbstraction, we need an address space\n\nWe present an address space to processes that is their unique view of the system memory\n\nCode, Heap, Stack, etc.\nProcess sees fake (virtual) addresses\nQ: We know that heap & stack grow towards one another. How does it work when we have multiple threads?"
+    "section": "Run the algorithms",
+    "text": "Run the algorithms\n\nFree holes, in memory order: 100K, 500K, 200K, 300K, 600K\nRequests, in order: 212K, 417K, 112K, 426K\nPlace each request using first fit, best fit, and worst fit\nWhich strategy places all four?\n\n\nAnswer: only best fit places all four. Remaining hole sizes shown after each step.\n\nFirst fit: 212K -&gt; 500K (288K left); 417K -&gt; 600K (183K left); 112K -&gt; 288K (176K left); 426K fails. Free holes: 100, 176, 200, 300, 183.\nBest fit: 212K -&gt; 300K (88K left); 417K -&gt; 500K (83K left); 112K -&gt; 200K (88K left); 426K -&gt; 600K (174K left).\nWorst fit: 212K -&gt; 600K (388K left); 417K -&gt; 500K (83K left); 112K -&gt; 388K (276K left); 426K fails. Free holes: 100, 83, 200, 300, 276.\n\nFollow-up: when first fit fails, there’s 959K free in total, more than twice what 426K needs. That’s external fragmentation, which is the next slide. Don’t oversell best fit: it won here, but in general it leaves tiny useless holes, and no strategy wins on every workload."
   },
   {
-    "objectID": "day16.html#section-1",
-    "href": "day16.html#section-1",
+    "objectID": "day17.html#external-fragmentation",
+    "href": "day17.html#external-fragmentation",
     "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
+    "section": "External fragmentation",
+    "text": "External fragmentation\n\nIdeally, all memory gets allocated\nIn reality: many holes, none big enough\n\nAlthough, combined they may be\n\nAll the strategies above suffer from this\n50-percent rule: up to 1/3 of memory may be unusable\nCompaction helps, but it’s expensive\n\n\n50-percent rule: with first fit, for N allocated blocks another ~0.5N blocks are lost to fragmentation, so up to 1/3 of memory may be unusable."
   },
   {
-    "objectID": "day16.html#questions-to-consider-1",
-    "href": "day16.html#questions-to-consider-1",
+    "objectID": "day17.html#segmentation",
+    "href": "day17.html#segmentation",
     "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow can the OS provide isolation between processes?\nWhat are the trade-offs in when we bind virtual addresses to physical addresses?\nHow can hardware help the OS manage memory efficiently?"
+    "section": "Segmentation",
+    "text": "Segmentation\n\nWhat if a process didn’t need one contiguous block?\nSegmentation: split the address space into logical segments (code, data, stack)\nEach segment has a base and bounds, stored in a per-process segment table\nSized to need: minimal internal fragmentation\nStill has external fragmentation\n\n\n\nEverything so far allocates contiguous blocks. Segmentation lets each segment be allocated separately.\nThe segment table maps virtual segment numbers to physical memory locations.\nEach segment is still contiguous, so over time free space gets sliced into unusable holes."
   },
   {
-    "objectID": "day16.html#base-and-bounds",
-    "href": "day16.html#base-and-bounds",
+    "objectID": "day17.html#segmentation-the-fundamental-limit",
+    "href": "day17.html#segmentation-the-fundamental-limit",
     "title": "CSC 4553",
-    "section": "Base and bounds",
-    "text": "Base and bounds\n\nOkay, we’re going to lie to processes. How should we achieve this abstraction?\nFirst approach: base and bounds (or base and limit) registers\n\nBase: smallest address; bounds: size of address space\nThis can help with protection / isolation\nWhere should the values be stored?\nThe CPU needs to check for every memory access\n\nStored in the PCB (we just added state that a context switch needs to account for)"
+    "section": "Segmentation: the fundamental limit",
+    "text": "Segmentation: the fundamental limit\n\nEach segment is still contiguous\n\nExternal fragmentation just moved from processes to segments\n\nWhat if we dropped contiguity entirely?\n\nFixed-size chunks: no external fragmentation\nThis is the idea behind paging\n\n\n\n\nSegmentation is more flexible than base-and-bounds, but the free-space management problem has only moved from “whole processes” to “individual segments.”\nWith fixed-size chunks, any free chunk fits any request.\nIA-32 uses both: logical addresses go through segmentation, then paging. We’ll return to this in the real-world section."
   },
   {
-    "objectID": "day16.html#base-and-bounds-contd",
-    "href": "day16.html#base-and-bounds-contd",
-    "title": "CSC 4553",
-    "section": "Base and bounds (cont’d)",
-    "text": "Base and bounds (cont’d)\n\nWhat will the OS need to keep track of?\n\nWhen a process is first run\n\nNeed to find space for it (i.e., must be tracking free space)\n\nWhen a process terminates\n\nReturn used memory to the free list\nClean up any data structures used to manage memory\n\nOn context switch?\n\nCPU only has one set of base and bounds registers\n\nWhen OS wants to relocate a process\n\nSet new registers\n\nWhen a process tries to address outside of its bound?\n\nexception handlers"
-  },
-  {
-    "objectID": "day16.html#base-and-bounds-contd-1",
-    "href": "day16.html#base-and-bounds-contd-1",
-    "title": "CSC 4553",
-    "section": "Base and bounds (cont’d)",
-    "text": "Base and bounds (cont’d)\n\nBase and bounds is simple, but has some issues:\n\nExternal fragmentation: over time, as processes are loaded and unloaded, we can end up with slivers of memory that are not usable for new processes\nRelocation is expensive: moving a process in memory requires copying all of its data\n\nTo address these issues, we can use more sophisticated memory management techniques, such as paging and segmentation"
-  },
-  {
-    "objectID": "day16.html#memory-address-binding",
-    "href": "day16.html#memory-address-binding",
-    "title": "CSC 4553",
-    "section": "Memory address binding",
-    "text": "Memory address binding\n\nWhen does the OS bind virtual addresses to physical addresses?\n\nCompile time: if we know where the process will be loaded, we can bind addresses at compile time\n\nNot flexible\nif you need to change anything, you need to recompile\n\nLoad time: we can bind addresses when the process is loaded into memory\n\nMore flexible, but still not ideal\nIf you need to move the process, you need to reload it\n\nRuntime: we can bind addresses during execution, which allows for maximum flexibility and is the most common approach\n\nRequires some help"
-  },
-  {
-    "objectID": "day16.html#runtime-address-binding",
-    "href": "day16.html#runtime-address-binding",
-    "title": "CSC 4553",
-    "section": "Runtime address binding",
-    "text": "Runtime address binding\n\nTo support runtime address binding, we need to use a memory management unit (MMU)\n\nHardware component that translates virtual addresses to physical addresses on-the-fly\nCan also provide protection by checking access rights and ensuring that processes cannot access memory outside of their allocated space\n\nThe OS needs to maintain a data structure (e.g., page table) that the MMU can use for translation\nThis allows processes to have a uniform address space (e.g., starting at 0 and going to “max”)"
-  },
-  {
-    "objectID": "day16.html#section-2",
-    "href": "day16.html#section-2",
+    "objectID": "day17.html#section-1",
+    "href": "day17.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
