@@ -1,0 +1,228 @@
+---
+title: CSC 4553
+subtitle: Fall 2026 - Day 17
+format:
+  clean-revealjs:
+    self-contained: true
+    incremental: true
+    margin: 0.15
+---
+
+## Admin
+:::{.nonincremental}
+- Lab due Friday, 21:00
+- Quiz due Monday, 21:00
+- Mid-semester survey on Canvas
+:::
+
+
+
+# Memory Optimizations {background-color="#40666e"}
+
+## Questions to consider
+:::{.nonincremental}
+- How can we reduce memory footprint without limiting functionality?
+- What are the benefits and challenges of sharing code across processes?
+- What are the trade-offs in swapping processes to disk?
+:::
+
+## Dynamic loading
+- Load parts of a process only when needed
+  - Why?
+    - Otherwise processes must fit entirely in physical memory
+- Granularity: per function or per module (shared library)
+- Smaller footprint, faster startup, more complexity
+- Where would this help most?
+  - Rarely used code (error handlers), plugins
+
+::: {.notes}
+- Function level: load a function when it's first called. Module level: load a shared library when it's first used.
+- Error-handling code is a good example: large, but seldom executed in a normal run. Plugins/extensions may never be used in a given execution.
+:::
+
+## Dynamic linking
+- Link libraries at runtime instead of compile time
+- Processes share one copy of library code in memory
+- Libraries can be updated without recompiling
+- Needs OS + dynamic linker/loader support
+- What could go wrong?
+  - Missing or incompatible library: fails to start or crashes
+  - Library updated while in use
+
+::: {.notes}
+- We've already seen shared libraries in `pmap` output.
+- The complexity this introduces is often called "DLL Hell."
+- If one process updates a shared library while another is using it, the result can be unpredictable behavior or crashes.
+:::
+
+## Swapping
+- Move an entire process from memory to a backing store (disk)
+- Q: Why swap?
+  - Run more processes than RAM can hold
+- Q: When do we swap?
+  - When processes don't all fit in physical memory
+- Q: When swapping back in, where does the process go?
+  - Depends on memory binding
+  - Runtime binding: anywhere
+
+::: {.notes}
+With runtime binding the process can be placed anywhere in memory, which gives maximum flexibility.
+
+Board drawing
+Walk through it: memory is full, P2 needs to run, so the OS picks a victim (P1), writes its whole image to disk, then reads P2 into the space P1 just gave up. P2 doesn't have to land where it was before. That's only possible with runtime binding. The cost is two full transfers of the process image, which sets up the next slide.
+:::
+
+## Pick the victim
+:::{.nonincremental}
+- Memory is full and P2 needs to run
+- You must swap a process out
+- What would you want to know about each process before choosing?
+:::
+
+::: {.notes}
+Answers to draw out:
+
+- Size: a big process frees more space but takes longer to transfer.
+- Priority, and how soon it will run again: don't evict something that's about to be scheduled.
+- Time since it last ran: an idle process is a good candidate.
+- State: a process that's blocked anyway is attractive, *unless* it has I/O in progress. That leads into the next slide.
+
+Point out that "least recently used" comes up again with page replacement.
+:::
+
+
+
+## Swapping caveats
+- Disk is slow: be careful who, how, and when we swap
+  - Swap time is proportional to memory swapped
+  - Transfer time dominates, not context switching
+- Process state matters
+  - E.g., processes blocked on I/O
+- In reality: we swap [pages]{.alert}, not whole processes (more later)
+
+::: {.notes}
+- If a process is blocked on I/O: 1) swapping uses the disk and further delays that I/O, 2) a direct I/O request may return into memory that now belongs to another process.
+- Programs keep growing, so swapping is expensive. E.g., a 1GB program takes ~10 sec per swap to a spinning disk.
+- Swapping entire processes is too costly and usually unnecessary.
+:::
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
+
+# Contiguous allocation {background-color="#40666e"}
+
+## Questions to consider
+:::{.nonincremental}
+- How do we keep track of free memory and decide where to place processes?
+- What problems arise from fragmentation, and how can we address them?
+- What are the trade-offs between different allocation strategies?
+:::
+
+## Memory allocation strategies
+- How do we find free memory for processes?
+- How do we keep track of free memory?
+- Which free block do we give to a process?
+
+## Contiguous allocation
+- Memory is allocated in contiguous blocks
+- *Fixed-sized partitions*: one process each
+  - Simple but inflexible
+- *Variable-sized partitions*: allocate exactly what's needed
+
+::: {.notes}
+With fixed partitions, n partitions means at most n processes, and partition sizes may not match what processes need.
+:::
+
+## Variable partitioning
+- Any obvious problems?
+  - [External fragmentation]{.alert}: small free blocks that are too small to use
+- Allocate processes until nothing fits in any "hole"
+- Then what?
+  - Rearrange memory: [compaction]{.alert}
+    - This is **expensive**
+
+::: {.notes}
+- Fragmentation builds up over time as processes are loaded and unloaded.
+- Compaction moves processes around to create enough contiguous space for the new process.
+:::
+
+## Allocation strategies
+- Which hole do we use for a new process?
+- [First fit]{.alert}: first hole that's big enough
+- [Best fit]{.alert}: smallest hole that's big enough
+- [Worst fit]{.alert}: largest hole
+- Downsides?
+  - First fit: early holes get chewed up
+  - Best/worst fit: full scan
+  - [Next fit]{.alert}: first fit, starting from the last allocation
+
+::: {.notes}
+With first fit, the early holes get chewed up, which slows down later searches.
+:::
+
+## Run the algorithms
+:::{.nonincremental}
+- Free holes, in memory order: **100K, 500K, 200K, 300K, 600K**
+- Requests, in order: **212K, 417K, 112K, 426K**
+- Place each request using first fit, best fit, and worst fit
+- Which strategy places all four?
+:::
+
+::: {.notes}
+Answer: only best fit places all four. Remaining hole sizes shown after each step.
+
+- First fit: 212K -> 500K (288K left); 417K -> 600K (183K left); 112K -> 288K (176K left); 426K **fails**. Free holes: 100, 176, 200, 300, 183.
+- Best fit: 212K -> 300K (88K left); 417K -> 500K (83K left); 112K -> 200K (88K left); 426K -> 600K (174K left).
+- Worst fit: 212K -> 600K (388K left); 417K -> 500K (83K left); 112K -> 388K (276K left); 426K **fails**. Free holes: 100, 83, 200, 300, 276.
+
+Follow-up: when first fit fails, there's 959K free in total, more than twice what 426K needs. That's external fragmentation, which is the next slide. Don't oversell best fit: it won here, but in general it leaves tiny useless holes, and no strategy wins on every workload.
+:::
+
+## External fragmentation
+- Ideally, all memory gets allocated
+- In reality: many holes, none big enough
+  - Although, combined they may be
+- All the strategies above suffer from this
+- 50-percent rule: up to 1/3 of memory may be unusable
+- Compaction helps, but it's expensive
+
+::: {.notes}
+50-percent rule: with first fit, for N allocated blocks another ~0.5N blocks are lost to fragmentation, so up to 1/3 of memory may be unusable.
+:::
+
+## Segmentation
+- What if a process didn't need one contiguous block?
+- [Segmentation]{.alert}: split the address space into logical segments (code, data, stack)
+- Each segment has a base and bounds, stored in a per-process segment table
+- Sized to need: minimal internal fragmentation
+- Still has external fragmentation
+
+::: {.notes}
+- Everything so far allocates contiguous blocks. Segmentation lets each segment be allocated separately.
+- The segment table maps virtual segment numbers to physical memory locations.
+- Each segment is still contiguous, so over time free space gets sliced into unusable holes.
+:::
+
+## Segmentation: the fundamental limit
+- Each segment is still contiguous
+  - External fragmentation just moved from processes to segments
+- What if we dropped contiguity entirely?
+  - Fixed-size chunks: [no external fragmentation]{.alert}
+  - This is the idea behind paging
+
+::: {.notes}
+- Segmentation is more flexible than base-and-bounds, but the free-space management problem has only moved from "whole processes" to "individual segments."
+- With fixed-size chunks, any free chunk fits any request.
+- IA-32 uses *both*: logical addresses go through segmentation, then paging. We'll return to this in the real-world section.
+:::
+
+## {background-color="#6E404F"}
+::: {.r-fit-text}
+What isn't clear?
+
+Comments? Thoughts?
+:::
