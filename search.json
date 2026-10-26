@@ -1,126 +1,175 @@
 [
   {
-    "objectID": "day17.html#admin",
-    "href": "day17.html#admin",
+    "objectID": "day18.html#admin",
+    "href": "day18.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nLab due Friday, 21:00\nQuiz due Monday, 21:00\nMid-semester survey on Canvas"
+    "text": "Admin\n\nExam 2 next week\nAssignment 3 posted"
   },
   {
-    "objectID": "day17.html#questions-to-consider",
-    "href": "day17.html#questions-to-consider",
+    "objectID": "day18.html#questions-to-consider",
+    "href": "day18.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow can we reduce memory footprint without limiting functionality?\nWhat are the benefits and challenges of sharing code across processes?\nWhat are the trade-offs in swapping processes to disk?"
+    "text": "Questions to consider\n\nHow does paging eliminate external fragmentation while supporting multiple processes?\nHow does the hardware (MMU) translate virtual addresses to physical addresses?\nWhat information must the OS maintain to support paging?"
   },
   {
-    "objectID": "day17.html#dynamic-loading",
-    "href": "day17.html#dynamic-loading",
+    "objectID": "day18.html#paging-1",
+    "href": "day18.html#paging-1",
     "title": "CSC 4553",
-    "section": "Dynamic loading",
-    "text": "Dynamic loading\n\nLoad parts of a process only when needed\n\nWhy?\n\nOtherwise processes must fit entirely in physical memory\n\n\nGranularity: per function or per module (shared library)\nSmaller footprint, faster startup, more complexity\nWhere would this help most?\n\nRarely used code (error handlers), plugins\n\n\n\n\nFunction level: load a function when it’s first called. Module level: load a shared library when it’s first used.\nError-handling code is a good example: large, but seldom executed in a normal run. Plugins/extensions may never be used in a given execution."
+    "section": "Paging",
+    "text": "Paging\n\nContiguous allocation has many issues; what should we do?\n\nBe non-contiguous!\n\nPaging: split memory into fixed-size blocks\n\nEliminates external fragmentation\nNeeds hardware support (MMU) to translate addresses via a page table\n\n\n\nBeing non-contiguous introduces many new challenges of its own, which is most of what the next few lectures are about."
   },
   {
-    "objectID": "day17.html#dynamic-linking",
-    "href": "day17.html#dynamic-linking",
+    "objectID": "day18.html#paging-contd",
+    "href": "day18.html#paging-contd",
     "title": "CSC 4553",
-    "section": "Dynamic linking",
-    "text": "Dynamic linking\n\nLink libraries at runtime instead of compile time\nProcesses share one copy of library code in memory\nLibraries can be updated without recompiling\nNeeds OS + dynamic linker/loader support\nWhat could go wrong?\n\nMissing or incompatible library: fails to start or crashes\nLibrary updated while in use\n\n\n\n\nWe’ve already seen shared libraries in pmap output.\nThe complexity this introduces is often called “DLL Hell.”\nIf one process updates a shared library while another is using it, the result can be unpredictable behavior or crashes."
+    "section": "Paging (cont’d)",
+    "text": "Paging (cont’d)\n\nJargon!\n\nPhysical memory: frames\nLogical memory: pages\nBacking store: blocks\n\nPaging maps pages to frames\nPages are logically contiguous; frames and blocks need not be\nTypically |frames| = |pages| = |blocks|\n\nMost common: 4KB\n\n\n\n\nAll three are fixed-size regions, and the backing store is addressed in fixed-size blocks too.\nPage sizes range from 512B to 64KB (64KB is an option on ARM64). Huge pages go to 2MB or 1GB."
   },
   {
-    "objectID": "day17.html#swapping",
-    "href": "day17.html#swapping",
+    "objectID": "day18.html#paging-contd-1",
+    "href": "day18.html#paging-contd-1",
     "title": "CSC 4553",
-    "section": "Swapping",
-    "text": "Swapping\n\nMove an entire process from memory to a backing store (disk)\nQ: Why swap?\n\nRun more processes than RAM can hold\n\nQ: When do we swap?\n\nWhen processes don’t all fit in physical memory\n\nQ: When swapping back in, where does the process go?\n\nDepends on memory binding\nRuntime binding: anywhere\n\n\n\nWith runtime binding the process can be placed anywhere in memory, which gives maximum flexibility.\nBoard drawing Walk through it: memory is full, P2 needs to run, so the OS picks a victim (P1), writes its whole image to disk, then reads P2 into the space P1 just gave up. P2 doesn’t have to land where it was before. That’s only possible with runtime binding. The cost is two full transfers of the process image, which sets up the next slide."
+    "section": "Paging (cont’d)",
+    "text": "Paging (cont’d)\n\n\n\nAddresses have two parts: page number and page offset\n\nPage number: index to a page\nOffset: byte within that page\n\nProcesses use virtual addresses. Which part do we translate?\n\nPage number only; offset stays the same"
   },
   {
-    "objectID": "day17.html#pick-the-victim",
-    "href": "day17.html#pick-the-victim",
+    "objectID": "day18.html#paging-contd-2",
+    "href": "day18.html#paging-contd-2",
     "title": "CSC 4553",
-    "section": "Pick the victim",
-    "text": "Pick the victim\n\nMemory is full and P2 needs to run\nYou must swap a process out\nWhat would you want to know about each process before choosing?\n\n\nAnswers to draw out:\n\nSize: a big process frees more space but takes longer to transfer.\nPriority, and how soon it will run again: don’t evict something that’s about to be scheduled.\nTime since it last ran: an idle process is a good candidate.\nState: a process that’s blocked anyway is attractive, unless it has I/O in progress. That leads into the next slide.\n\nPoint out that “least recently used” comes up again with page replacement."
+    "section": "Paging (cont’d)",
+    "text": "Paging (cont’d)\n\nThe page table maps virtual page numbers to physical frames\n\nThe MMU uses it on every memory access\n\nTransparent to the process; the OS controls the page table\nOne page table per process\n\nWhere should it be stored?\nIn memory; pointer held in the PCB\n\n\n\n\nThe page table can be any of several data structures. We’ll see a few in the last section.\nKeeping the pointer in the PCB means one more thing to deal with on a context switch."
   },
   {
-    "objectID": "day17.html#swapping-caveats",
-    "href": "day17.html#swapping-caveats",
+    "objectID": "day18.html#page-tables",
+    "href": "day18.html#page-tables",
     "title": "CSC 4553",
-    "section": "Swapping caveats",
-    "text": "Swapping caveats\n\nDisk is slow: be careful who, how, and when we swap\n\nSwap time is proportional to memory swapped\nTransfer time dominates, not context switching\n\nProcess state matters\n\nE.g., processes blocked on I/O\n\nIn reality: we swap pages, not whole processes (more later)\n\n\n\nIf a process is blocked on I/O: 1) swapping uses the disk and further delays that I/O, 2) a direct I/O request may return into memory that now belongs to another process.\nPrograms keep growing, so swapping is expensive. E.g., a 1GB program takes ~10 sec per swap to a spinning disk.\nSwapping entire processes is too costly and usually unnecessary."
+    "section": "Page tables",
+    "text": "Page tables\n\n\n\nAddress space \\(2^m\\) bytes, page size \\(2^n\\) bytes\n\nHigh \\(m-n\\) bits: page number\nLow \\(n\\) bits: offset\n\nThis example: \\(2^4\\) = 16 pages, \\(2^{12}\\) = 4KB pages\n\n\n\n\n\n\n\n\nIn this example, 12 offset bits address all 4096 bytes within a page."
   },
   {
-    "objectID": "day17.html#section",
-    "href": "day17.html#section",
+    "objectID": "day18.html#examples",
+    "href": "day18.html#examples",
+    "title": "CSC 4553",
+    "section": "Examples",
+    "text": "Examples\n\n32-bit virtual address, 8-bit offset. How many pages? Page size? Total size?\n\n\\(2^{24}\\) (~16M) pages, 256B pages, 4GB total\n\n256 pages, 8KB each\n\n8-bit index, 13-bit offset, 21 bits = 2MB total"
+  },
+  {
+    "objectID": "day18.html#translate-an-address",
+    "href": "day18.html#translate-an-address",
+    "title": "CSC 4553",
+    "section": "Translate an address",
+    "text": "Translate an address\n\n16-bit virtual addresses, 4KB pages\nPage table:\n\n\n\n\nPage\nFrame\n\n\n\n\n0\n2\n\n\n1\n5\n\n\n2\nnot present\n\n\n3\n1\n\n\n\n\nTranslate: 0x1A3F, 0x3FFF, 0x2004\n\n\nFirst step: 4KB = \\(2^{12}\\), so the low 12 bits (3 hex digits) are the offset and the top 4 bits (1 hex digit) are the page number. That’s why hex is convenient here.\n\n0x1A3F: page 1, offset 0xA3F. Frame 5, so 0x5A3F\n0x3FFF: page 3, offset 0xFFF (last byte of the page). Frame 1, so 0x1FFF\n0x2004: page 2, which isn’t present: page fault. The OS has to bring the page in (or kill the process if the address is invalid).\n\nPoints to draw out: only the page number changes and the offset is copied straight through. The present bit is what turns a lookup into a fault. Pages 4–15 aren’t shown; assume they’re not present."
+  },
+  {
+    "objectID": "day18.html#page-tables-contd",
+    "href": "day18.html#page-tables-contd",
+    "title": "CSC 4553",
+    "section": "Page tables (cont’d)",
+    "text": "Page tables (cont’d)\n\nPage size depends on system usage\n\nSmaller: finer granularity, but bigger page table\nLarger: fewer, bigger disk transfers and fewer TLB misses\n\nHow do pages affect fragmentation?\n\nNo external fragmentation\nBut now internal fragmentation\nOn average: \\(1/2\\) page per process\n\n\n\nInternal fragmentation happens unless a process uses exactly a multiple of the page size. The last page is, on average, half empty."
+  },
+  {
+    "objectID": "day18.html#page-table-entries",
+    "href": "day18.html#page-table-entries",
+    "title": "CSC 4553",
+    "section": "Page table entries",
+    "text": "Page table entries\n\nWhat goes into a page table entry?\n\nPage frame number (duh)\nPresent/absent: is the frame number valid?\nProtection: what access is allowed\nModified/Dirty: written since loaded?\nReferenced: used recently?\nCaching disabled: bypass the cache?\n\nWhat doesn’t go in?\n\nWhere the page lives on disk\n\nOnly what the hardware needs for translation\n\n\n\n\n\nA dirty page must be written to disk before eviction. The referenced bit drives eviction decisions.\nCaching disabled is for pages mapped to device registers (memory-mapped I/O). The CPU must read the device every time, not a stale cached copy.\nThe disk location of a non-resident page is kept in the OS’s own data structures (swap or VM bookkeeping), not in the hardware page table."
+  },
+  {
+    "objectID": "day18.html#size-the-page-table",
+    "href": "day18.html#size-the-page-table",
+    "title": "CSC 4553",
+    "section": "Size the page table",
+    "text": "Size the page table\n\nAssume 4 KB pages and 4-byte page table entries. How big is a single, flat page table for…\n\nA 32-bit address space?\nA 64-bit address space?\n\n100 processes on the 32-bit machine — total memory just for page tables?\n\nWhat does this tell you about storing page tables in RAM?\n\n\n\nExpected answers:\n\n32-bit: \\(2^{32}/2^{12} = 2^{20}\\) entries × 4 B = 4 MB per process\n64-bit: \\(2^{64}/2^{12} = 2^{52}\\) entries × 4 B = \\(2^{54}\\) B = 16 PB per process. That’s absurd, and motivates why real 64-bit systems don’t use the full 64 bits and why we need multi-level / inverted page tables. (Real 64-bit entries are 8 B, which doubles it to 32 PB.)\n100 processes × 4 MB = 400 MB just for page tables\n\nWhat this tells us about storing page tables in RAM:\n\n4 MB per process is already painful. A flat table must be contiguous in physical memory, and most of it is empty for typical processes (sparse address space).\nIt scales with process count, not memory use. A process that touches 1 page still pays for the full 4 MB table.\n64-bit is impossible flat: the table itself wouldn’t fit in any machine. That forces a smarter structure.\nConclusion: don’t store the whole table densely. Use multi-level (only allocate the levels you need), inverted (size by physical RAM, not virtual), or hashed page tables."
+  },
+  {
+    "objectID": "day18.html#paging-summary",
+    "href": "day18.html#paging-summary",
+    "title": "CSC 4553",
+    "section": "Paging summary",
+    "text": "Paging summary\n\nPages allow us to:\n\nLoad processes at finer granularity\nAvoid external fragmentation\nSwap individual pages (“paging”)\n\nNew questions:\n\nWhich pages are in memory?\nWhen we need a frame, which page goes?\nWhich pages are modified and need writing to disk?"
+  },
+  {
+    "objectID": "day18.html#section",
+    "href": "day18.html#section",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day17.html#questions-to-consider-1",
-    "href": "day17.html#questions-to-consider-1",
+    "objectID": "day18.html#questions-to-consider-1",
+    "href": "day18.html#questions-to-consider-1",
     "title": "CSC 4553",
     "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow do we keep track of free memory and decide where to place processes?\nWhat problems arise from fragmentation, and how can we address them?\nWhat are the trade-offs between different allocation strategies?"
+    "text": "Questions to consider\n\nWhat makes a good page replacement strategy, and why?\nHow can we approximate optimal page replacement without knowing the future?\nWhat are the practical implementation challenges for different page replacement algorithms?"
   },
   {
-    "objectID": "day17.html#memory-allocation-strategies",
-    "href": "day17.html#memory-allocation-strategies",
+    "objectID": "day18.html#page-replacement-1",
+    "href": "day18.html#page-replacement-1",
     "title": "CSC 4553",
-    "section": "Memory allocation strategies",
-    "text": "Memory allocation strategies\n\nHow do we find free memory for processes?\nHow do we keep track of free memory?\nWhich free block do we give to a process?"
+    "section": "Page replacement",
+    "text": "Page replacement\n\nMemory is full and a process needs a page: evict a frame (page replacement)\nThe evicted page is the victim\nCostly: 1 I/O for a clean victim, 2 for a dirty one\nClean pages are preferred victims\n\nDirty pages need a write-back first\n\nDownside of evicting dirty pages?\n\nForces the write at the worst time\nDirty pages were recently active\n\n\n\n\nA clean (read-only or unmodified) victim can be evicted by simply overwriting the frame, with no disk write. We still need one read to bring in the new page.\nA dirty victim adds a write on top of an already expensive operation.\nThe write happens while the process is stalled waiting. Batching dirty writes during idle time would be more efficient.\nRecent activity means a dirty page is likely to be needed again soon."
   },
   {
-    "objectID": "day17.html#contiguous-allocation-1",
-    "href": "day17.html#contiguous-allocation-1",
+    "objectID": "day18.html#page-replacement-algorithms-opt",
+    "href": "day18.html#page-replacement-algorithms-opt",
     "title": "CSC 4553",
-    "section": "Contiguous allocation",
-    "text": "Contiguous allocation\n\nMemory is allocated in contiguous blocks\nFixed-sized partitions: one process each\n\nSimple but inflexible\n\nVariable-sized partitions: allocate exactly what’s needed\n\n\nWith fixed partitions, n partitions means at most n processes, and partition sizes may not match what processes need."
+    "section": "Page replacement algorithms: OPT",
+    "text": "Page replacement algorithms: OPT\n\nOptimal (OPT): evict the page that won’t be used for the longest time\nImpossible (like SJF), but a useful benchmark\nExample: 3 frames, this reference pattern:  \n\n\nConceptually, label each page with the number of instructions that will run before it’s next referenced, and evict the one with the largest label."
   },
   {
-    "objectID": "day17.html#variable-partitioning",
-    "href": "day17.html#variable-partitioning",
+    "objectID": "day18.html#page-replacement-algorithms-fifo",
+    "href": "day18.html#page-replacement-algorithms-fifo",
     "title": "CSC 4553",
-    "section": "Variable partitioning",
-    "text": "Variable partitioning\n\nAny obvious problems?\n\nExternal fragmentation: small free blocks that are too small to use\n\nAllocate processes until nothing fits in any “hole”\nThen what?\n\nRearrange memory: compaction\n\nThis is expensive\n\n\n\n\n\nFragmentation builds up over time as processes are loaded and unloaded.\nCompaction moves processes around to create enough contiguous space for the new process."
+    "section": "Page replacement algorithms: FIFO",
+    "text": "Page replacement algorithms: FIFO\n\nFirst-In-First-Out (FIFO): evict the oldest page\nDownsides?\n\nIgnores use: may evict important pages\n\nBelady’s anomaly: more frames can mean more page faults\nTry this pattern with 3 frames, then 4: \n\n\nWhy the anomaly happens: FIFO isn’t a stack algorithm. With a stack algorithm (OPT, LRU), the pages held with n frames are always a subset of those held with n+1 frames, so adding frames can never add faults. FIFO has no such guarantee because it ignores use entirely."
   },
   {
-    "objectID": "day17.html#allocation-strategies",
-    "href": "day17.html#allocation-strategies",
+    "objectID": "day18.html#beladys-anomaly",
+    "href": "day18.html#beladys-anomaly",
     "title": "CSC 4553",
-    "section": "Allocation strategies",
-    "text": "Allocation strategies\n\nWhich hole do we use for a new process?\nFirst fit: first hole that’s big enough\nBest fit: smallest hole that’s big enough\nWorst fit: largest hole\nDownsides?\n\nFirst fit: early holes get chewed up\nBest/worst fit: full scan\nNext fit: first fit, starting from the last allocation\n\n\n\nWith first fit, the early holes get chewed up, which slows down later searches."
+    "section": "Belady’s anomaly",
+    "text": "Belady’s anomaly\n\nFIFO lacks the stack property, so more frames can mean more faults \nNumber of page faults with 3 frames = 9 \nNumber of page faults with 4 frames = 10"
   },
   {
-    "objectID": "day17.html#run-the-algorithms",
-    "href": "day17.html#run-the-algorithms",
+    "objectID": "day18.html#page-replacement-algorithms-lru",
+    "href": "day18.html#page-replacement-algorithms-lru",
     "title": "CSC 4553",
-    "section": "Run the algorithms",
-    "text": "Run the algorithms\n\nFree holes, in memory order: 100K, 500K, 200K, 300K, 600K\nRequests, in order: 212K, 417K, 112K, 426K\nPlace each request using first fit, best fit, and worst fit\nWhich strategy places all four?\n\n\nAnswer: only best fit places all four. Remaining hole sizes shown after each step.\n\nFirst fit: 212K -&gt; 500K (288K left); 417K -&gt; 600K (183K left); 112K -&gt; 288K (176K left); 426K fails. Free holes: 100, 176, 200, 300, 183.\nBest fit: 212K -&gt; 300K (88K left); 417K -&gt; 500K (83K left); 112K -&gt; 200K (88K left); 426K -&gt; 600K (174K left).\nWorst fit: 212K -&gt; 600K (388K left); 417K -&gt; 500K (83K left); 112K -&gt; 388K (276K left); 426K fails. Free holes: 100, 83, 200, 300, 276.\n\nFollow-up: when first fit fails, there’s 959K free in total, more than twice what 426K needs. That’s external fragmentation, which is the next slide. Don’t oversell best fit: it won here, but in general it leaves tiny useless holes, and no strategy wins on every workload."
+    "section": "Page replacement algorithms: LRU",
+    "text": "Page replacement algorithms: LRU\n\nWe can’t see the future. What can we do?\n\nLook at the past\n\nLeast Recently Used (LRU): evict the page unused for the longest time\n\nOPT looking backwards\nThe evicted page might be needed right away"
   },
   {
-    "objectID": "day17.html#external-fragmentation",
-    "href": "day17.html#external-fragmentation",
+    "objectID": "day18.html#lru-contd",
+    "href": "day18.html#lru-contd",
     "title": "CSC 4553",
-    "section": "External fragmentation",
-    "text": "External fragmentation\n\nIdeally, all memory gets allocated\nIn reality: many holes, none big enough\n\nAlthough, combined they may be\n\nAll the strategies above suffer from this\n50-percent rule: up to 1/3 of memory may be unusable\nCompaction helps, but it’s expensive\n\n\n50-percent rule: with first fit, for N allocated blocks another ~0.5N blocks are lost to fragmentation, so up to 1/3 of memory may be unusable."
+    "section": "LRU (cont’d)",
+    "text": "LRU (cont’d)\n\nLRU does not exhibit Belady’s anomaly\nHow can we implement LRU?\n\nTimestamp per entry: space, plus a search\nOrdered list: updates on every access\nBoth impractical without special hardware\n\nApproximate it with a reference bit\n\nSet when the page is referenced\nCleared periodically\n\n\n\n\nLRU is a stack algorithm, which is why it’s immune to Belady’s anomaly.\nTimestamps: each entry gets an associated clock value, which wastes space and needs a search to find the oldest.\nOrdered list: less wasted space, but many pointer updates on every memory access to keep it current.\nReference bits start at zero and are cleared periodically, e.g., on a timer interrupt."
   },
   {
-    "objectID": "day17.html#segmentation",
-    "href": "day17.html#segmentation",
+    "objectID": "day18.html#page-replacement-algorithms-others",
+    "href": "day18.html#page-replacement-algorithms-others",
     "title": "CSC 4553",
-    "section": "Segmentation",
-    "text": "Segmentation\n\nWhat if a process didn’t need one contiguous block?\nSegmentation: split the address space into logical segments (code, data, stack)\nEach segment has a base and bounds, stored in a per-process segment table\nSized to need: minimal internal fragmentation\nStill has external fragmentation\n\n\n\nEverything so far allocates contiguous blocks. Segmentation lets each segment be allocated separately.\nThe segment table maps virtual segment numbers to physical memory locations.\nEach segment is still contiguous, so over time free space gets sliced into unusable holes."
+    "section": "Page replacement algorithms: others",
+    "text": "Page replacement algorithms: others\n\nSecond Chance: FIFO queue + reference bit\n\nBit 0: replace the page\nBit 1: clear it, move page to the back\nDownside?\n\nConstantly moving pages in the list\n\n\nClock: same idea, circular list\n\nHand points at the oldest page\nBit 0: replace; bit 1: clear and advance\nA good approximation of LRU\n\n\n\nClock avoids Second Chance’s list shuffling. Pages stay put and only the hand moves."
   },
   {
-    "objectID": "day17.html#segmentation-the-fundamental-limit",
-    "href": "day17.html#segmentation-the-fundamental-limit",
+    "objectID": "day18.html#page-replacement-algorithms-others-contd",
+    "href": "day18.html#page-replacement-algorithms-others-contd",
     "title": "CSC 4553",
-    "section": "Segmentation: the fundamental limit",
-    "text": "Segmentation: the fundamental limit\n\nEach segment is still contiguous\n\nExternal fragmentation just moved from processes to segments\n\nWhat if we dropped contiguity entirely?\n\nFixed-size chunks: no external fragmentation\nThis is the idea behind paging\n\n\n\n\nSegmentation is more flexible than base-and-bounds, but the free-space management problem has only moved from “whole processes” to “individual segments.”\nWith fixed-size chunks, any free chunk fits any request.\nIA-32 uses both: logical addresses go through segmentation, then paging. We’ll return to this in the real-world section."
+    "section": "Page replacement algorithms: others (cont’d)",
+    "text": "Page replacement algorithms: others (cont’d)\n\nLeast Frequently Used (LFU): evict lowest use count\n\nDownside?\n\nHeavy early use keeps a page forever\n\n\nMost Frequently Used (MFU): evict highest count\n\nDownside?\n\nEvicts the pages you use most\n\n\nBoth are poor: expensive and don’t approximate OPT\n\n\n\nLFU fix: aging. Periodically decay the counts so old use counts for less.\nMFU’s rationale is that the page with the lowest count probably just arrived and hasn’t been used yet. In practice, the heavily used pages it evicts are usually the ones needed again soon."
   },
   {
-    "objectID": "day17.html#section-1",
-    "href": "day17.html#section-1",
+    "objectID": "day18.html#page-replacement-algorithms-summary",
+    "href": "day18.html#page-replacement-algorithms-summary",
+    "title": "CSC 4553",
+    "section": "Page replacement algorithms: summary",
+    "text": "Page replacement algorithms: summary\n\nOPT is optimal but impossible; LRU approximates it well\nMany algorithms, with different performance and hardware needs\ne.g., Linux: active/inactive lists (2Q-like)\n\nDriven by the hardware referenced bit\n\nPage replacement shows up at every level of the memory hierarchy\n\nWe focus on disk/RAM: the biggest gap in access time\n\n\n\n\nLinux keeps two lists approximating 2Q. Pages move between active and inactive based on the referenced (accessed) bit, with no per-access counters or timestamps. Since kernel 6.1, Linux also offers MGLRU (multi-generational LRU), which uses more than two lists.\nThe same idea appears at different time scales (CPU caches, the TLB) and inside applications (database buffer pools, web caches)."
+  },
+  {
+    "objectID": "day18.html#section-1",
+    "href": "day18.html#section-1",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
