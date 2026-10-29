@@ -10,7 +10,9 @@ format:
 
 ## Admin
 :::{.nonincremental}
--
+- Exam 2 Tuesday
+- Lab due Friday
+- Quiz due Monday
 :::
 
 # Page replacement {background-color="#40666e"}
@@ -110,23 +112,10 @@ Why the anomaly happens: FIFO isn't a *stack algorithm*. With a stack algorithm 
 Clock avoids Second Chance's list shuffling. Pages stay put and only the hand moves.
 :::
 
-## Page replacement algorithms: others (cont'd)
-- Least Frequently Used (LFU): evict lowest use count
-  - Downside?
-    - Heavy early use keeps a page forever
-- Most Frequently Used (MFU): evict highest count
-  - Downside?
-    - Evicts the pages you use most
-- Both are poor: expensive and don't approximate OPT
 
-::: {.notes}
-- LFU fix: *aging*. Periodically decay the counts so old use counts for less.
-- MFU's rationale is that the page with the lowest count probably just arrived and hasn't been used yet. In practice, the heavily used pages it evicts are usually the ones needed again soon.
-:::
 
 ## Page replacement algorithms: summary
-- OPT is optimal but impossible; LRU approximates it well
-- Many algorithms, with different performance and hardware needs
+- OPT is optimal but impossible; LRU approximates it
 - e.g., Linux: active/inactive lists (2Q-like)
   - Driven by the hardware referenced bit
 - Page replacement shows up at every level of the memory hierarchy
@@ -156,12 +145,10 @@ Comments? Thoughts?
 :::
 
 ## Page table access
-- Where is the page table stored?
-  - Old: dedicated registers (doesn't scale)
-  - Now: main memory, pointer in the PCB
+- Remember, page tables are stored in main memory
 - Downsides?
   - Large tables use a lot of memory
-  - Two memory accesses per access
+  - Two memory accesses per access (one for the page table, one for the data)
   - How do we speed this up?
     - Hardware
 
@@ -174,7 +161,7 @@ Comments? Thoughts?
 - Uses [associative memory]{.alert}
   - What's special about associative (content-addressable) memory?
     - *Parallel search*: all keys checked at once
-- Key (tag)–value pairs: a cache for the page table
+- Key (virtual page number)–value (physical frame number) pairs: a cache for the page table
 - **Expensive**, so only a small number of entries
 
 ## TLB (cont'd)
