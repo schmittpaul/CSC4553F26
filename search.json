@@ -4,7 +4,7 @@
     "href": "day19.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin"
+    "text": "Admin\n\nExam 2 Tuesday\nLab due Friday\nQuiz due Monday"
   },
   {
     "objectID": "day19.html#questions-to-consider",
@@ -63,18 +63,11 @@
     "text": "Page replacement algorithms: others\n\nSecond Chance: FIFO queue + reference bit\n\nBit 0: replace the page\nBit 1: clear it, move page to the back\nDownside?\n\nConstantly moving pages in the list\n\n\nClock: same idea, circular list\n\nHand points at the oldest page\nBit 0: replace; bit 1: clear and advance\nA good approximation of LRU\n\n\n\nClock avoids Second Chance’s list shuffling. Pages stay put and only the hand moves."
   },
   {
-    "objectID": "day19.html#page-replacement-algorithms-others-contd",
-    "href": "day19.html#page-replacement-algorithms-others-contd",
-    "title": "CSC 4553",
-    "section": "Page replacement algorithms: others (cont’d)",
-    "text": "Page replacement algorithms: others (cont’d)\n\nLeast Frequently Used (LFU): evict lowest use count\n\nDownside?\n\nHeavy early use keeps a page forever\n\n\nMost Frequently Used (MFU): evict highest count\n\nDownside?\n\nEvicts the pages you use most\n\n\nBoth are poor: expensive and don’t approximate OPT\n\n\n\nLFU fix: aging. Periodically decay the counts so old use counts for less.\nMFU’s rationale is that the page with the lowest count probably just arrived and hasn’t been used yet. In practice, the heavily used pages it evicts are usually the ones needed again soon."
-  },
-  {
     "objectID": "day19.html#page-replacement-algorithms-summary",
     "href": "day19.html#page-replacement-algorithms-summary",
     "title": "CSC 4553",
     "section": "Page replacement algorithms: summary",
-    "text": "Page replacement algorithms: summary\n\nOPT is optimal but impossible; LRU approximates it well\nMany algorithms, with different performance and hardware needs\ne.g., Linux: active/inactive lists (2Q-like)\n\nDriven by the hardware referenced bit\n\nPage replacement shows up at every level of the memory hierarchy\n\nWe focus on disk/RAM: the biggest gap in access time\n\n\n\n\nLinux keeps two lists approximating 2Q. Pages move between active and inactive based on the referenced (accessed) bit, with no per-access counters or timestamps. Since kernel 6.1, Linux also offers MGLRU (multi-generational LRU), which uses more than two lists.\nThe same idea appears at different time scales (CPU caches, the TLB) and inside applications (database buffer pools, web caches)."
+    "text": "Page replacement algorithms: summary\n\nOPT is optimal but impossible; LRU approximates it\ne.g., Linux: active/inactive lists (2Q-like)\n\nDriven by the hardware referenced bit\n\nPage replacement shows up at every level of the memory hierarchy\n\nWe focus on disk/RAM: the biggest gap in access time\n\n\n\n\nLinux keeps two lists approximating 2Q. Pages move between active and inactive based on the referenced (accessed) bit, with no per-access counters or timestamps. Since kernel 6.1, Linux also offers MGLRU (multi-generational LRU), which uses more than two lists.\nThe same idea appears at different time scales (CPU caches, the TLB) and inside applications (database buffer pools, web caches)."
   },
   {
     "objectID": "day19.html#section",
@@ -95,14 +88,14 @@
     "href": "day19.html#page-table-access",
     "title": "CSC 4553",
     "section": "Page table access",
-    "text": "Page table access\n\nWhere is the page table stored?\n\nOld: dedicated registers (doesn’t scale)\nNow: main memory, pointer in the PCB\n\nDownsides?\n\nLarge tables use a lot of memory\nTwo memory accesses per access\nHow do we speed this up?\n\nHardware\n\n\n\n\n\nThe PCB pointer means the context switch has to swap which page table the MMU uses.\nTwo accesses: one to read the page table entry and one for the actual data."
+    "text": "Page table access\n\nRemember, page tables are stored in main memory\nDownsides?\n\nLarge tables use a lot of memory\nTwo memory accesses per access (one for the page table, one for the data)\nHow do we speed this up?\n\nHardware\n\n\n\n\n\nThe PCB pointer means the context switch has to swap which page table the MMU uses.\nTwo accesses: one to read the page table entry and one for the actual data."
   },
   {
     "objectID": "day19.html#translation-lookaside-buffer-tlb",
     "href": "day19.html#translation-lookaside-buffer-tlb",
     "title": "CSC 4553",
     "section": "Translation lookaside buffer (TLB)",
-    "text": "Translation lookaside buffer (TLB)\n\nUses associative memory\n\nWhat’s special about associative (content-addressable) memory?\n\nParallel search: all keys checked at once\n\n\nKey (tag)–value pairs: a cache for the page table\nExpensive, so only a small number of entries"
+    "text": "Translation lookaside buffer (TLB)\n\nUses associative memory\n\nWhat’s special about associative (content-addressable) memory?\n\nParallel search: all keys checked at once\n\n\nKey (virtual page number)–value (physical frame number) pairs: a cache for the page table\nExpensive, so only a small number of entries"
   },
   {
     "objectID": "day19.html#tlb-contd",

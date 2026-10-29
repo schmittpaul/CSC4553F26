@@ -1018,7 +1018,9 @@ margin-right: 0; }
 <section id="admin" class="slide level2">
 <h2>Admin</h2>
 <ul>
-<li></li>
+<li>Exam 2 Tuesday</li>
+<li>Lab due Friday</li>
+<li>Quiz due Monday</li>
 </ul>
 </section>
 <section>
@@ -1205,47 +1207,10 @@ overflow: hidden!important;
 display:block!important;
 }</style></aside>
 </section>
-<section id="page-replacement-algorithms-others-contd" class="slide level2">
-<h2>Page replacement algorithms: others (cont’d)</h2>
-<ul>
-<li class="fragment">Least Frequently Used (LFU): evict lowest use count
-<ul>
-<li class="fragment">Downside?
-<ul>
-<li class="fragment">Heavy early use keeps a page forever</li>
-</ul></li>
-</ul></li>
-<li class="fragment">Most Frequently Used (MFU): evict highest count
-<ul>
-<li class="fragment">Downside?
-<ul>
-<li class="fragment">Evicts the pages you use most</li>
-</ul></li>
-</ul></li>
-<li class="fragment">Both are poor: expensive and don’t approximate OPT</li>
-</ul>
-<aside class="notes">
-<ul>
-<li>LFU fix: <em>aging</em>. Periodically decay the counts so old use counts for less.</li>
-<li>MFU’s rationale is that the page with the lowest count probably just arrived and hasn’t been used yet. In practice, the heavily used pages it evicts are usually the ones needed again soon.</li>
-</ul>
-<style type="text/css">
-span.MJX_Assistive_MathML {
-position:absolute!important;
-clip: rect(1px, 1px, 1px, 1px);
-padding: 1px 0 0 0!important;
-border: 0!important;
-height: 1px!important;
-width: 1px!important;
-overflow: hidden!important;
-display:block!important;
-}</style></aside>
-</section>
 <section id="page-replacement-algorithms-summary" class="slide level2">
 <h2>Page replacement algorithms: summary</h2>
 <ul>
-<li class="fragment">OPT is optimal but impossible; LRU approximates it well</li>
-<li class="fragment">Many algorithms, with different performance and hardware needs</li>
+<li class="fragment">OPT is optimal but impossible; LRU approximates it</li>
 <li class="fragment">e.g., Linux: active/inactive lists (2Q-like)
 <ul>
 <li class="fragment">Driven by the hardware referenced bit</li>
@@ -1295,15 +1260,11 @@ display:block!important;
 <section id="page-table-access" class="slide level2">
 <h2>Page table access</h2>
 <ul>
-<li class="fragment">Where is the page table stored?
-<ul>
-<li class="fragment">Old: dedicated registers (doesn’t scale)</li>
-<li class="fragment">Now: main memory, pointer in the PCB</li>
-</ul></li>
+<li class="fragment">Remember, page tables are stored in main memory</li>
 <li class="fragment">Downsides?
 <ul>
 <li class="fragment">Large tables use a lot of memory</li>
-<li class="fragment">Two memory accesses per access</li>
+<li class="fragment">Two memory accesses per access (one for the page table, one for the data)</li>
 <li class="fragment">How do we speed this up?
 <ul>
 <li class="fragment">Hardware</li>
@@ -1337,7 +1298,7 @@ display:block!important;
 <li class="fragment"><em>Parallel search</em>: all keys checked at once</li>
 </ul></li>
 </ul></li>
-<li class="fragment">Key (tag)–value pairs: a cache for the page table</li>
+<li class="fragment">Key (virtual page number)–value (physical frame number) pairs: a cache for the page table</li>
 <li class="fragment"><strong>Expensive</strong>, so only a small number of entries</li>
 </ul>
 </section>
