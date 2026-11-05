@@ -1,203 +1,203 @@
 [
   {
-    "objectID": "day19.html#admin",
-    "href": "day19.html#admin",
+    "objectID": "day20.html#admin",
+    "href": "day20.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nExam 2 Tuesday\nLab due Friday\nQuiz due Monday"
+    "text": "Admin\n\nAssignment 2 due next Wednesday"
   },
   {
-    "objectID": "day19.html#questions-to-consider",
-    "href": "day19.html#questions-to-consider",
-    "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhat makes a good page replacement strategy, and why?\nHow can we approximate optimal page replacement without knowing the future?\nWhat are the practical implementation challenges for different page replacement algorithms?"
-  },
-  {
-    "objectID": "day19.html#page-replacement-1",
-    "href": "day19.html#page-replacement-1",
-    "title": "CSC 4553",
-    "section": "Page replacement",
-    "text": "Page replacement\n\nMemory is full and a process needs a page: evict a frame (page replacement)\nThe evicted page is the victim\nCostly: 1 I/O for a clean victim, 2 for a dirty one\nClean pages are preferred victims\n\nDirty pages need a write-back first\n\nDownside of evicting dirty pages?\n\nForces the write at the worst time\nDirty pages were recently active\n\n\n\n\nA clean (read-only or unmodified) victim can be evicted by simply overwriting the frame, with no disk write. We still need one read to bring in the new page.\nA dirty victim adds a write on top of an already expensive operation.\nThe write happens while the process is stalled waiting. Batching dirty writes during idle time would be more efficient.\nRecent activity means a dirty page is likely to be needed again soon."
-  },
-  {
-    "objectID": "day19.html#page-replacement-algorithms-opt",
-    "href": "day19.html#page-replacement-algorithms-opt",
-    "title": "CSC 4553",
-    "section": "Page replacement algorithms: OPT",
-    "text": "Page replacement algorithms: OPT\n\nOptimal (OPT): evict the page that won’t be used for the longest time\nImpossible (like SJF), but a useful benchmark\nExample: 3 frames, this reference pattern:  \n\n\nConceptually, label each page with the number of instructions that will run before it’s next referenced, and evict the one with the largest label."
-  },
-  {
-    "objectID": "day19.html#page-replacement-algorithms-fifo",
-    "href": "day19.html#page-replacement-algorithms-fifo",
-    "title": "CSC 4553",
-    "section": "Page replacement algorithms: FIFO",
-    "text": "Page replacement algorithms: FIFO\n\nFirst-In-First-Out (FIFO): evict the oldest page\nDownsides?\n\nIgnores use: may evict important pages\n\nBelady’s anomaly: more frames can mean more page faults\nTry this pattern with 3 frames, then 4: \n\n\nWhy the anomaly happens: FIFO isn’t a stack algorithm. With a stack algorithm (OPT, LRU), the pages held with n frames are always a subset of those held with n+1 frames, so adding frames can never add faults. FIFO has no such guarantee because it ignores use entirely."
-  },
-  {
-    "objectID": "day19.html#beladys-anomaly",
-    "href": "day19.html#beladys-anomaly",
-    "title": "CSC 4553",
-    "section": "Belady’s anomaly",
-    "text": "Belady’s anomaly\n\nFIFO lacks the stack property, so more frames can mean more faults \nNumber of page faults with 3 frames = 9 \nNumber of page faults with 4 frames = 10"
-  },
-  {
-    "objectID": "day19.html#page-replacement-algorithms-lru",
-    "href": "day19.html#page-replacement-algorithms-lru",
-    "title": "CSC 4553",
-    "section": "Page replacement algorithms: LRU",
-    "text": "Page replacement algorithms: LRU\n\nWe can’t see the future. What can we do?\n\nLook at the past\n\nLeast Recently Used (LRU): evict the page unused for the longest time\n\nOPT looking backwards\nThe evicted page might be needed right away"
-  },
-  {
-    "objectID": "day19.html#lru-contd",
-    "href": "day19.html#lru-contd",
-    "title": "CSC 4553",
-    "section": "LRU (cont’d)",
-    "text": "LRU (cont’d)\n\nLRU does not exhibit Belady’s anomaly\nHow can we implement LRU?\n\nTimestamp per entry: space, plus a search\nOrdered list: updates on every access\nBoth impractical without special hardware\n\nApproximate it with a reference bit\n\nSet when the page is referenced\nCleared periodically\n\n\n\n\nLRU is a stack algorithm, which is why it’s immune to Belady’s anomaly.\nTimestamps: each entry gets an associated clock value, which wastes space and needs a search to find the oldest.\nOrdered list: less wasted space, but many pointer updates on every memory access to keep it current.\nReference bits start at zero and are cleared periodically, e.g., on a timer interrupt."
-  },
-  {
-    "objectID": "day19.html#page-replacement-algorithms-others",
-    "href": "day19.html#page-replacement-algorithms-others",
-    "title": "CSC 4553",
-    "section": "Page replacement algorithms: others",
-    "text": "Page replacement algorithms: others\n\nSecond Chance: FIFO queue + reference bit\n\nBit 0: replace the page\nBit 1: clear it, move page to the back\nDownside?\n\nConstantly moving pages in the list\n\n\nClock: same idea, circular list\n\nHand points at the oldest page\nBit 0: replace; bit 1: clear and advance\nA good approximation of LRU\n\n\n\nClock avoids Second Chance’s list shuffling. Pages stay put and only the hand moves."
-  },
-  {
-    "objectID": "day19.html#page-replacement-algorithms-summary",
-    "href": "day19.html#page-replacement-algorithms-summary",
-    "title": "CSC 4553",
-    "section": "Page replacement algorithms: summary",
-    "text": "Page replacement algorithms: summary\n\nOPT is optimal but impossible; LRU approximates it\ne.g., Linux: active/inactive lists (2Q-like)\n\nDriven by the hardware referenced bit\n\nPage replacement shows up at every level of the memory hierarchy\n\nWe focus on disk/RAM: the biggest gap in access time\n\n\n\n\nLinux keeps two lists approximating 2Q. Pages move between active and inactive based on the referenced (accessed) bit, with no per-access counters or timestamps. Since kernel 6.1, Linux also offers MGLRU (multi-generational LRU), which uses more than two lists.\nThe same idea appears at different time scales (CPU caches, the TLB) and inside applications (database buffer pools, web caches)."
-  },
-  {
-    "objectID": "day19.html#section",
-    "href": "day19.html#section",
-    "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
-  },
-  {
-    "objectID": "day19.html#questions-to-consider-1",
-    "href": "day19.html#questions-to-consider-1",
-    "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhy is page table size a critical concern for memory efficiency?\nHow can hardware support (like the TLB) improve address translation performance?\nHow does context switching interact with the TLB, and what mechanisms address the correctness and performance problems it creates?"
-  },
-  {
-    "objectID": "day19.html#page-table-access",
-    "href": "day19.html#page-table-access",
-    "title": "CSC 4553",
-    "section": "Page table access",
-    "text": "Page table access\n\nRemember, page tables are stored in main memory\nDownsides?\n\nLarge tables use a lot of memory\nTwo memory accesses per access (one for the page table, one for the data)\nHow do we speed this up?\n\nHardware\n\n\n\n\n\nThe PCB pointer means the context switch has to swap which page table the MMU uses.\nTwo accesses: one to read the page table entry and one for the actual data."
-  },
-  {
-    "objectID": "day19.html#translation-lookaside-buffer-tlb",
-    "href": "day19.html#translation-lookaside-buffer-tlb",
-    "title": "CSC 4553",
-    "section": "Translation lookaside buffer (TLB)",
-    "text": "Translation lookaside buffer (TLB)\n\nUses associative memory\n\nWhat’s special about associative (content-addressable) memory?\n\nParallel search: all keys checked at once\n\n\nKey (virtual page number)–value (physical frame number) pairs: a cache for the page table\nExpensive, so only a small number of entries"
-  },
-  {
-    "objectID": "day19.html#tlb-contd",
-    "href": "day19.html#tlb-contd",
-    "title": "CSC 4553",
-    "section": "TLB (cont’d)",
-    "text": "TLB (cont’d)\n\n\n\nCPU issues a logical address (e.g., load from address 100)\nOn a miss, fetch the entry from the page table\n\nSoft miss: page is in memory\nHard miss: page is on disk (page fault)\n\n\n\n\n\n\n\n\nOn a miss, the fetched entry may replace an existing TLB entry."
-  },
-  {
-    "objectID": "day19.html#tlb-contd-1",
-    "href": "day19.html#tlb-contd-1",
-    "title": "CSC 4553",
-    "section": "TLB (cont’d)",
-    "text": "TLB (cont’d)\n\nOn a hit, we get the physical address directly\n\nHit: 1 memory access; miss: 2\n\nHit ratio sets the effective access time (EAT)\nExample: 80% hits, 10ns per memory access\n\nEAT = \\((.8 \\times 10) + (.2 \\times 20) = 12ns\\)\n99% hits: \\((.99 \\times 10) + (.01 \\times 20) = 10.1ns\\)\n\nEntries that must always stay (e.g., kernel)?\n\n“Wired down”: never replaced\n\n\n\n\nOn a miss, the two accesses are one for the page table and one for the data.\nThis EAT model treats TLB lookup time as negligible and assumes a single-level page table. With multi-level tables, a miss costs more memory accesses."
-  },
-  {
-    "objectID": "day19.html#how-good-does-the-tlb-need-to-be",
-    "href": "day19.html#how-good-does-the-tlb-need-to-be",
-    "title": "CSC 4553",
-    "section": "How good does the TLB need to be?",
-    "text": "How good does the TLB need to be?\n\nMemory access: 10ns. A perfect TLB gives EAT = 10ns\nWhat hit rate keeps EAT within 5% of perfect (≤ 10.5ns)?\n\nSingle-level page table (a miss costs 2 accesses)\n4-level page table (a miss costs 5 accesses)\n\n\n\nLet \\(h\\) be the hit rate.\n\nSingle level: \\(10h + 20(1-h) = 20 - 10h \\le 10.5\\), so \\(h \\ge\\) 95%\n4-level: a miss walks 4 tables and then reads the data, which is 5 accesses = 50ns. \\(10h + 50(1-h) = 50 - 40h \\le 10.5\\), so \\(h \\ge\\) 98.75%\n\nFor comparison, the slide’s 80% hit rate with a 4-level table gives \\(8 + 10 = 18ns\\), almost twice the cost of a hit.\nPoints to draw out: deeper page tables save memory (coming up in the next section) but make every miss more expensive, so the TLB matters more as tables get deeper. This is why real TLBs hit well above 99%, and why CPUs add page-walk caches. Same caveats as before: TLB lookup time is ignored."
-  },
-  {
-    "objectID": "day19.html#tlb-contd-2",
-    "href": "day19.html#tlb-contd-2",
-    "title": "CSC 4553",
-    "section": "TLB (cont’d)",
-    "text": "TLB (cont’d)\n\nMultiple processes, one small TLB. What happens on a context switch?\n\nProcess 1’s virtual page 1 ≠ process 2’s virtual page 1\n\nCould flush the TLB on every switch\n\nDownside?\n\nLose the cache; rebuild it every time\n\n\nOther idea?\n\nAddress-space identifiers (ASIDs): tag each TLB entry with its process\n\n\n\nASIDs prevent a process from accessing a page that doesn’t belong to it, while letting pages from multiple processes coexist in the TLB."
-  },
-  {
-    "objectID": "day19.html#section-1",
-    "href": "day19.html#section-1",
-    "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
-  },
-  {
-    "objectID": "day19.html#questions-to-consider-2",
-    "href": "day19.html#questions-to-consider-2",
+    "objectID": "day20.html#questions-to-consider",
+    "href": "day20.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
     "text": "Questions to consider\n\nHow can we organize page tables to handle large address spaces efficiently?\nWhat are the trade-offs between space overhead and lookup complexity?\nWhen and why would we choose alternative page table designs?"
   },
   {
-    "objectID": "day19.html#page-table-structures-1",
-    "href": "day19.html#page-table-structures-1",
+    "objectID": "day20.html#page-table-structures-1",
+    "href": "day20.html#page-table-structures-1",
     "title": "CSC 4553",
     "section": "Page table structures",
     "text": "Page table structures\n\n\n\nLinear page tables are wasteful, especially with many unused pages (likely)\nAnswer?\n\nMultilevel page tables"
   },
   {
-    "objectID": "day19.html#the-rule-that-drives-everything",
-    "href": "day19.html#the-rule-that-drives-everything",
+    "objectID": "day20.html#the-rule-that-drives-everything",
+    "href": "day20.html#the-rule-that-drives-everything",
     "title": "CSC 4553",
     "section": "The rule that drives everything",
-    "text": "The rule that drives everything\n\nEach page table fits in one page (on x86 and most designs)\n\nPage directory and every second-level table: one 4KB page each\nOne directory per process, plus a table per valid directory entry\nWhy? The paging system can manage page tables like any other page\n\nThis constraint sets everything else:\n\nentry size → entries per table → bits per level\n\n\n\n\nA page table is just another data structure stored in memory.\nBecause each table is exactly one page, no special-case allocator is needed.\nNot universal: the 32-bit ARM first-level table is 16KB, and x86 PAE’s top level is only 32 bytes. But one page per table is the common design and the one we’ll use."
+    "text": "The rule that drives everything\n\nEach page table fits in one page (on x86 and most designs)\n\nPage directory and every second-level table: one 4KB page each\nOne directory per process, plus a table per valid directory entry\nWhy? The paging system can manage page tables like any other page\n\nThis constraint sets everything else:\n\nentry size → entries per table → bits per level\n\n\n\n\nA page table is just another data structure stored in memory.\nBecause each table is exactly one page, no special-case allocator is needed.\nNot universal: the 32-bit ARM first-level table is 16KB. But one page per table is the common design and the one we’ll use."
   },
   {
-    "objectID": "day19.html#multilevel-page-tables",
-    "href": "day19.html#multilevel-page-tables",
+    "objectID": "day20.html#multilevel-page-tables",
+    "href": "day20.html#multilevel-page-tables",
     "title": "CSC 4553",
     "section": "Multilevel page tables",
     "text": "Multilevel page tables\n\n\n\nExample: two-level page table\n\n10-bit PT1, 10-bit PT2, 12-bit offset\n\nTop level points to 1024 second-level tables\nEach second-level table maps 1024 4KB pages\n\n\n\n\n\n\n\nBenefit?\n\nUnused second-level tables needn’t exist\nHere: 4 tables (16KB), not 4MB\n\n\n\nIn this example all \\(2^{20}\\) pages are still addressable, but only 4 tables are resident: the top level plus 3 second-level tables."
   },
   {
-    "objectID": "day19.html#two-level-page-table-address-breakdown",
-    "href": "day19.html#two-level-page-table-address-breakdown",
+    "objectID": "day20.html#two-level-page-table-address-breakdown",
+    "href": "day20.html#two-level-page-table-address-breakdown",
     "title": "CSC 4553",
     "section": "Two-level page table: address breakdown",
     "text": "Two-level page table: address breakdown\n\n\n\nField\nBits\nMeaning\n\n\n\n\nPT1 (dir index)\n10\nwhich page table\n\n\nPT2 (page index)\n10\nwhich entry in that table\n\n\nOffset\n12\nbyte within page\n\n\n\n\n4-byte entries → \\(4096 / 4 = 1024 = 2^{10}\\) entries → 10-bit index\n\\(2^{10}\\) × 4B = 4KB = exactly one page\nInvalid directory entry: its page table needn’t exist\n\n\nExactly one page is no accident. It’s the rule from before."
   },
   {
-    "objectID": "day19.html#flat-vs.-two-level",
-    "href": "day19.html#flat-vs.-two-level",
+    "objectID": "day20.html#flat-vs.-two-level",
+    "href": "day20.html#flat-vs.-two-level",
     "title": "CSC 4553",
     "section": "Flat vs. two-level",
     "text": "Flat vs. two-level\n\n32-bit addresses, 4KB pages, 4-byte entries\nA process uses:\n\n4MB of code at the bottom of its address space\n1 page of stack at the very top\n\nHow much memory do its page tables take with a flat table? With the two-level table above?\n\n\n\nFlat: \\(2^{20}\\) entries × 4 B = 4 MB, regardless of how little the process uses.\nTwo-level: each second-level table maps 1024 × 4KB = 4MB.\n\nCode (0 to 4MB) is covered by exactly one second-level table (directory entry 0).\nThe stack page at the top needs one more (directory entry 1023).\nPlus the directory itself: 3 tables × 4KB = 12 KB.\n\nThe other 1021 directory entries are marked invalid, so their tables don’t exist.\n\nFollow-up: what if the code were 4MB + 1 byte? It spills into a second table, giving 16KB total. Or the code is 4MB but starts at address 2MB instead of 0? It straddles two tables, also 16KB. Alignment matters.\nFollow-up: what’s the cost? Every TLB miss now takes two memory accesses to walk the table instead of one."
   },
   {
-    "objectID": "day19.html#multilevel-page-tables-contd",
-    "href": "day19.html#multilevel-page-tables-contd",
+    "objectID": "day20.html#multilevel-page-tables-contd",
+    "href": "day20.html#multilevel-page-tables-contd",
     "title": "CSC 4553",
     "section": "Multilevel page tables (cont’d)",
-    "text": "Multilevel page tables (cont’d)\n\n\n\nExtends to more levels\n64-bit doesn’t use all 64 bits\n\nx86-64: 48 bits, 256TB\n\n\n\n\n\n\n\n\nx86-64 uses 4 levels for 48 bits. Newer CPUs support 5-level paging with 57-bit addresses (128PB)."
+    "text": "Multilevel page tables (cont’d)\n\n\n\nExtends to more levels\n64-bit doesn’t use all 64 bits\n\nx86-64: 48 bits, 256TB\n8-byte entries → 512 per table → 9-bit index\n9 + 9 + 9 + 9 + 12 = 48\n\n\n\n\n\n\n\n\nx86-64 uses 4 levels for 48 bits. Same one-page-per-table rule as before; the entries are just twice as wide, so each level indexes with 9 bits instead of 10. Physical addresses go up to 52 bits (4PB). Newer CPUs support 5-level paging with 57-bit addresses (128PB)."
   },
   {
-    "objectID": "day19.html#inverted-page-tables",
-    "href": "day19.html#inverted-page-tables",
+    "objectID": "day20.html#inverted-page-tables",
+    "href": "day20.html#inverted-page-tables",
     "title": "CSC 4553",
     "section": "Inverted page tables",
-    "text": "Inverted page tables\n\n\n\nSo far: one page table per process\nAlternative: one system-wide table, one entry per physical frame (inverted page table)\n\nEntry: owning PID + virtual page number\n\n\n\n\n\n\n\n\nEach entry records which process owns the frame and which virtual page of that process is stored there. The table size scales with physical memory, not virtual address space."
+    "text": "Inverted page tables\n\n\n\nSo far: one page table per process\nAlternative: one system-wide table, one entry per physical frame (inverted page table)\n\nEntry: owning PID + virtual page number\n\nSmaller, but lookup needs a hash table (plus the TLB)\nRare on x86 and ARM; used by PowerPC and IA-64\n\n\n\n\n\n\n\nEach entry records which process owns the frame and which virtual page of that process is stored there. The table size scales with physical memory, not virtual address space. - Multi-level tables won on x86 and ARM because they’re simpler and handle sparse address spaces well. - Inverted tables also make shared memory awkward, since each frame records only one virtual page."
   },
   {
-    "objectID": "day19.html#inverted-page-tables-contd",
-    "href": "day19.html#inverted-page-tables-contd",
+    "objectID": "day20.html#section",
+    "href": "day20.html#section",
     "title": "CSC 4553",
-    "section": "Inverted page tables (cont’d)",
-    "text": "Inverted page tables (cont’d)\n\nSmaller, but lookups are harder\n\nNaive lookup searches the whole table (slow)\n\nFix: hash table index, plus a TLB for frequent lookups\nRare on mainstream x86 and ARM\n\nUsed by PowerPC and IA-64 (hashed tables)\n\n\n\n\nMulti-level tables won on x86 and ARM because they’re simpler and handle sparse address spaces well.\nInverted tables also make shared memory awkward, since each frame records only one virtual page."
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
   },
   {
-    "objectID": "day19.html#section-2",
-    "href": "day19.html#section-2",
+    "objectID": "day20.html#questions-to-consider-1",
+    "href": "day20.html#questions-to-consider-1",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nA process’s pages don’t all fit in memory, and it doesn’t need them all at once. Which pages do we load, and when?\nWhat does the OS do when a process touches a page that isn’t in memory?\nWhat happens when the pages a process needs right now don’t fit?"
+  },
+  {
+    "objectID": "day20.html#demand-paging",
+    "href": "day20.html#demand-paging",
+    "title": "CSC 4553",
+    "section": "Demand paging",
+    "text": "Demand paging\n\n\n\nWe can load pages into memory only when they are needed, which is called demand paging\nHere we see why the valid bit is useful\n\nValid implies “allocated and in memory”\nInvalid implies “not allocated or not in memory”"
+  },
+  {
+    "objectID": "day20.html#demand-paging-contd",
+    "href": "day20.html#demand-paging-contd",
+    "title": "CSC 4553",
+    "section": "Demand paging (cont’d)",
+    "text": "Demand paging (cont’d)\n\nIf process has a page fault, we trap to the OS, which\n\nchecks the reference is legal (if not, kill the process)\nfinds a free frame (if none, run page replacement to pick a victim)\nrequests the block from the backing store or swap space\nbrings the page into memory\nupdates the page table\nrestarts the faulting instruction\n\nNon-resident pages may have never been in memory (so in the file system) or were once resident and swapped out (to swap space)\nPure demand paging: start with no pages resident. Simple, but a burst of faults at startup"
+  },
+  {
+    "objectID": "day20.html#working-set",
+    "href": "day20.html#working-set",
+    "title": "CSC 4553",
+    "section": "Working set",
+    "text": "Working set\n\nTo mitigate the performance issues of pure demand paging, we can use the concept of a working set\nTakes advantage of the principle of locality: processes tend to access a relatively small set of pages over a short period of time\nWorking-set model:\n\nDefine a window \\(\\Delta\\) (most recent page references)\nIf a page is referenced within the window, it’s in the working set; otherwise, it’s not\n\nAllows for prepaging: when a process is swapped back in, bring its whole working set in at once instead of faulting each page in one at a time"
+  },
+  {
+    "objectID": "day20.html#thrashing",
+    "href": "day20.html#thrashing",
+    "title": "CSC 4553",
+    "section": "Thrashing",
+    "text": "Thrashing\n\nIf the working set of a process exceeds the available physical memory, the process will experience a high rate of page faults, leading to a condition called thrashing\nWhen the page fault time exceeds the time spent executing, we are said to be thrashing\nProblem: CPU scheduler sees the decreasing CPU utilization and increases the degree of multiprogramming; makes thrashing worse\nSolutions?\n\nLocal replacement algorithm (each process can only select victims from its set of allocated frames)\ni.e. cannot steal frames from another process and cause the latter to thrash as well\nDecrease the degree of multiprogramming (reduce the number of processes)\n\n\n\nLocal replacement means a process can only evict its own frames; global means it can evict anyone’s. Local limits the damage, but it doesn’t fix the thrashing process itself. That’s why most OSes stay with global replacement and instead watch the page-fault rate or working set to decide when to suspend a process."
+  },
+  {
+    "objectID": "day20.html#optimizing-shared-pages",
+    "href": "day20.html#optimizing-shared-pages",
+    "title": "CSC 4553",
+    "section": "Optimizing shared pages",
+    "text": "Optimizing shared pages\n\nSame idea as demand paging: don’t do the work until a page is actually needed\nRemember how fork() and exec() work?\n\nFork leads to a copy of the parent’s address space\n… but exec() means that a lot of children immediately replace, making a copy wasteful\n\nWhat should we do?\n\nShare the pages initially\nIf either the parent or the child writes to the shared page, then you actually make a copy (copy-on-write)\nCopy-on-write significantly speeds up fork operation; particularly if they will soon exec"
+  },
+  {
+    "objectID": "day20.html#section-1",
+    "href": "day20.html#section-1",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day20.html#questions-to-consider-2",
+    "href": "day20.html#questions-to-consider-2",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nHow can we increase TLB reach without making the TLB itself larger?\nWhat memory security features does the OS and hardware provide to protect against attacks?\nWhy does a discrete GPU need its own memory, and what changes when CPU and GPU share one pool?"
+  },
+  {
+    "objectID": "day20.html#tlb-reach",
+    "href": "day20.html#tlb-reach",
+    "title": "CSC 4553",
+    "section": "TLB reach",
+    "text": "TLB reach\n\nWe’ve talked about the hit ratio of a TLB\n\nInfluenced by the size of the TLB\n\nAnother metric: TLB reach (i.e., how much memory is addressable from the TLB)\n\nNum TLB entries * page size\nIdeal world: entire working set for a process fits in the TLB\n\nIt’d be great to simply grow the TLB, but that’s expensive\nWhat else can we do?"
+  },
+  {
+    "objectID": "day20.html#huge-pages",
+    "href": "day20.html#huge-pages",
+    "title": "CSC 4553",
+    "section": "Huge pages",
+    "text": "Huge pages\n\nAs we discussed, page tables can be large, and TLBs are small. This can lead to a high TLB miss rate, which can significantly degrade performance.\nOne solution is to use larger page sizes, known as huge pages\nBy using huge pages (e.g., 2MB instead of 4KB [can go up to 1GB]), we can reduce the number of pages, and thus the size of the page table, and increase the TLB hit rate\nNewer kernels support transparent huge pages, which automatically use huge pages when possible without requiring changes to applications\nDanger: internal fragmentation can be much worse with huge pages, so they are not ideal for all workloads"
+  },
+  {
+    "objectID": "day20.html#aside-where-does-a-gpu-get-its-memory",
+    "href": "day20.html#aside-where-does-a-gpu-get-its-memory",
+    "title": "CSC 4553",
+    "section": "Aside: where does a GPU get its memory?",
+    "text": "Aside: where does a GPU get its memory?\n\nA graphics card has its own memory chips, called VRAM\n\nSeparate chips, separate wires, separate address space\nSo a pointer from your program is meaningless to the GPU; data is copied over PCIe first\n\nWhy a second pool? VRAM is built for bandwidth: roughly 10x normal system RAM\n\nThe cost: fixed, small capacity, and every transfer is an explicit copy over a slower link\n\nOS angle: VRAM is not part of the pool of frames the kernel hands out"
+  },
+  {
+    "objectID": "day20.html#unified-memory",
+    "href": "day20.html#unified-memory",
+    "title": "CSC 4553",
+    "section": "Unified memory",
+    "text": "Unified memory\n\nApple silicon takes the opposite approach: one pool, on the same package as the CPU\n\nCPU, GPU, and Neural Engine all address it; a pointer means the same thing to each\nNo copy, because there’s nowhere to copy to\n\nConnects to today: 16KB default pages (x86 uses 4KB)\n\nSame number of TLB entries, so 4x the TLB reach, paid for in internal fragmentation, same as huge pages\n\nThe tradeoff: capacity is fixed at purchase, and CPU and GPU compete for the same bandwidth\n\n\nWhy soldered? It’s not just thinness or lock-in — it’s what makes the bandwidth possible.\n\nA standard DIMM channel is 64 bits wide; dual-channel desktop is 128 bits, ~90-100 GB/s. Apple runs much wider buses (roughly 128-bit on a base chip up to ~512-bit on a Max), which is how you get into the hundreds of GB/s.\nEvery one of those bits is a physical wire. You can’t route that many traces through a socket with good length matching at modern speeds. The width requires the memory to sit right next to the controller.\nA socket is also an electrical discontinuity (stubs, reflections), so soldered point-to-point traces clock higher. And shorter traces = less energy per bit, which is most of why these laptops idle so well.\nBe honest about the other half: it also lets the vendor charge a lot for capacity upgrades. Both things are true at once. Good habit of mind: a real engineering justification and a convenient business consequence can coexist.\nApple’s is beyond soldered — the DRAM sits on the same package as the SoC, not just on the motherboard. Two degrees of the same tradeoff.\n\nBackup, if someone asks whether this is a law of nature: no. LPCAMM2 (JEDEC standard, grew out of Dell’s CAMM work) is a socketed LPDDR5X module — it clamps flat against the board instead of edge-connecting, so signal integrity is much better than SO-DIMM and the memory is still upgradeable. Doesn’t reach Apple-class bus widths, but it shows the tradeoff is being engineered around."
+  },
+  {
+    "objectID": "day20.html#linux-memory-security",
+    "href": "day20.html#linux-memory-security",
+    "title": "CSC 4553",
+    "section": "Linux memory security",
+    "text": "Linux memory security\n\nLinux provides several features to enhance memory security, such as:\n\nAddress Space Layout Randomization (ASLR): randomizes the memory addresses used by a process, making it more difficult for attackers to predict where code or data is located\nKernel Address Space Layout Randomization (KASLR): randomizes the memory addresses used by the kernel\nData Execution Prevention (DEP): marks certain areas of memory as non-executable, preventing code from being executed from those regions (e.g., the stack)\n\nNX bit: hardware support for DEP held in the page table entry"
+  },
+  {
+    "objectID": "day20.html#section-2",
+    "href": "day20.html#section-2",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day20.html#questions-to-consider-3",
+    "href": "day20.html#questions-to-consider-3",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhy does the kernel need physically contiguous memory, and how does this differ from user-space allocation?\nHow does the buddy system handle allocation and deallocation, and what are its trade-offs?\nWhy is a slab allocator useful for small, frequently used kernel objects?"
+  },
+  {
+    "objectID": "day20.html#linux-kernel-memory-management",
+    "href": "day20.html#linux-kernel-memory-management",
+    "title": "CSC 4553",
+    "section": "Linux kernel memory management",
+    "text": "Linux kernel memory management\n\nTreated differently from user memory: structures of varying sizes, and some must be physically contiguous (e.g., for device I/O)\nBuddy system allocator: hand out blocks of size \\(2^k\\)\n\nRequest of size \\(s\\): find the smallest \\(2^k \\ge s\\)\nToo big? Split into two “buddies” of size \\(2^{k-1}\\), repeat\nOn free: if the buddy is also free, coalesce back into a larger block"
+  },
+  {
+    "objectID": "day20.html#buddy-system-allocator-tradeoffs",
+    "href": "day20.html#buddy-system-allocator-tradeoffs",
+    "title": "CSC 4553",
+    "section": "Buddy system allocator: tradeoffs",
+    "text": "Buddy system allocator: tradeoffs\n\nAdvantages?\n\nSimple and efficient for allocating memory of varying sizes\nCan quickly coalesce free blocks\n\nDisadvantages?\n\nFragmentation\n\nInternal fragmentation: if a request is for 5KB, we need to allocate an 8KB block, wasting 3KB\nExternal fragmentation: over time, as blocks are allocated and freed, we can end up with many small free blocks that cannot be coalesced into larger blocks, making it difficult to satisfy larger allocation requests\n\nNot ideal for all workloads, particularly those with many small allocations"
+  },
+  {
+    "objectID": "day20.html#slab-allocator",
+    "href": "day20.html#slab-allocator",
+    "title": "CSC 4553",
+    "section": "Slab allocator",
+    "text": "Slab allocator\n\n\n\nLinux also uses a slab allocator for small objects\nSlab allocator maintains caches of pre-allocated memory chunks for frequently used, fixed-size objects (e.g., file descriptors, process control blocks)\nWhen an object is needed, the allocator can quickly provide a chunk from the appropriate cache, reducing fragmentation and improving performance for small allocations"
+  },
+  {
+    "objectID": "day20.html#section-3",
+    "href": "day20.html#section-3",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
