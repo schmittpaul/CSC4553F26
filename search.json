@@ -1,203 +1,217 @@
 [
   {
-    "objectID": "day21.html#admin",
-    "href": "day21.html#admin",
+    "objectID": "day22.html#admin",
+    "href": "day22.html#admin",
     "title": "CSC 4553",
     "section": "Admin",
-    "text": "Admin\n\nAssignment 2 due Wednesday\nExam 2 regrade request cutoff Wednesday"
+    "text": "Admin\n\nAssignment 2 due tonight\nQuiz / Lab, as usual"
   },
   {
-    "objectID": "day21.html#questions-to-consider",
-    "href": "day21.html#questions-to-consider",
-    "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nHow can we increase TLB reach without making the TLB itself larger?\nWhat memory security features does the OS and hardware provide to protect against attacks?\nWhy does a discrete GPU need its own memory, and what changes when CPU and GPU share one pool?"
-  },
-  {
-    "objectID": "day21.html#tlb-reach",
-    "href": "day21.html#tlb-reach",
-    "title": "CSC 4553",
-    "section": "TLB reach",
-    "text": "TLB reach\n\nWe’ve talked about the hit ratio of a TLB\n\nInfluenced by the size of the TLB\n\nAnother metric: TLB reach (i.e., how much memory is addressable from the TLB)\n\nNum TLB entries * page size\nIdeal world: entire working set for a process fits in the TLB\n\nIt’d be great to simply grow the TLB, but that’s expensive\nWhat else can we do?"
-  },
-  {
-    "objectID": "day21.html#huge-pages",
-    "href": "day21.html#huge-pages",
-    "title": "CSC 4553",
-    "section": "Huge pages",
-    "text": "Huge pages\n\nAs we discussed, page tables can be large, and TLBs are small. This can lead to a high TLB miss rate, which can significantly degrade performance.\nOne solution is to use larger page sizes, known as huge pages\nBy using huge pages (e.g., 2MB instead of 4KB [can go up to 1GB]), we can reduce the number of pages, and thus the size of the page table, and increase the TLB hit rate\nNewer kernels support transparent huge pages, which automatically use huge pages when possible without requiring changes to applications\nDanger: internal fragmentation can be much worse with huge pages, so they are not ideal for all workloads"
-  },
-  {
-    "objectID": "day21.html#aside-where-does-a-gpu-get-its-memory",
-    "href": "day21.html#aside-where-does-a-gpu-get-its-memory",
-    "title": "CSC 4553",
-    "section": "Aside: where does a GPU get its memory?",
-    "text": "Aside: where does a GPU get its memory?\n\nA graphics card has its own memory chips, called VRAM\n\nSeparate chips, separate wires, separate address space\nSo a pointer from your program is not directly usable by the GPU; data is copied over PCIe first\n(Unified virtual memory in CUDA / Linux HMM can share pointers, but the driver still migrates pages over PCIe behind the scenes)\n\nWhy a second pool? VRAM is built for bandwidth: roughly 10x normal system RAM (GDDR), more with HBM\n\nThe cost: fixed, small capacity, and data has to cross a slower link (PCIe)\n\nOS angle: VRAM is not part of the pool of frames the kernel hands out"
-  },
-  {
-    "objectID": "day21.html#unified-memory",
-    "href": "day21.html#unified-memory",
-    "title": "CSC 4553",
-    "section": "Unified memory",
-    "text": "Unified memory\n\nIntegrated GPUs (Intel, AMD APUs, game consoles) have long shared system RAM: one pool\nApple silicon pushes this further: DRAM on the same package as the CPU, with very wide memory buses\n\nCPU, GPU, and Neural Engine all share the same physical memory; buffers are shared, not copied\n\nbecause there’s nowhere to copy to\n\n\nConnects to huge pages: 16KB default pages (x86 uses 4KB)\n\nFor the same number of TLB entries, that’s 4x the TLB reach, paid for in internal fragmentation, same as huge pages\n\nThe tradeoff: memory is soldered on-package, so capacity is fixed at purchase, and CPU and GPU compete for the same bandwidth\n\n\nWhy soldered? It’s not just thinness or lock-in — it’s what makes the bandwidth possible.\n\nA standard DIMM channel is 64 bits wide; dual-channel desktop is 128 bits, ~90-100 GB/s. Apple runs much wider buses (roughly 128-bit on a base chip up to ~512-bit on a Max), which is how you get into the hundreds of GB/s.\nEvery one of those bits is a physical wire. You can’t route that many traces through a socket with good length matching at modern speeds. The width requires the memory to sit right next to the controller.\nA socket is also an electrical discontinuity (stubs, reflections), so soldered point-to-point traces clock higher. And shorter traces = less energy per bit, which is most of why these laptops idle so well.\nBe honest about the other half: it also lets the vendor charge a lot for capacity upgrades. Both things are true at once. Good habit of mind: a real engineering justification and a convenient business consequence can coexist.\nApple’s is beyond soldered — the DRAM sits on the same package as the SoC, not just on the motherboard. Two degrees of the same tradeoff.\n\nBackup, if someone asks whether this is a law of nature: no. LPCAMM2 (JEDEC standard, grew out of Dell’s CAMM work) is a socketed LPDDR5X module — it clamps flat against the board instead of edge-connecting, so signal integrity is much better than SO-DIMM and the memory is still upgradeable. Doesn’t reach Apple-class bus widths, but it shows the tradeoff is being engineered around."
-  },
-  {
-    "objectID": "day21.html#linux-memory-security",
-    "href": "day21.html#linux-memory-security",
-    "title": "CSC 4553",
-    "section": "Linux memory security",
-    "text": "Linux memory security\n\nLinux provides several features to enhance memory security, such as:\n\nAddress Space Layout Randomization (ASLR): randomizes the memory addresses used by a process, making it more difficult for attackers to predict where code or data is located\nKernel Address Space Layout Randomization (KASLR): randomizes the memory addresses used by the kernel\nNon-executable memory (NX): marks certain areas of memory as non-executable, preventing code from being executed from those regions (e.g., the stack)\n\nNX bit: hardware support held in the page table entry\n(Windows calls this Data Execution Prevention, DEP)"
-  },
-  {
-    "objectID": "day21.html#section",
-    "href": "day21.html#section",
-    "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
-  },
-  {
-    "objectID": "day21.html#questions-to-consider-1",
-    "href": "day21.html#questions-to-consider-1",
-    "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhy does the kernel need physically contiguous memory, and how does this differ from user-space allocation?\nHow does the buddy system handle allocation and deallocation, and what are its trade-offs?\nWhy is a slab allocator useful for small, frequently used kernel objects?"
-  },
-  {
-    "objectID": "day21.html#linux-kernel-memory-management",
-    "href": "day21.html#linux-kernel-memory-management",
-    "title": "CSC 4553",
-    "section": "Linux kernel memory management",
-    "text": "Linux kernel memory management\n\nTreated differently from user memory: structures of varying sizes, and some must be physically contiguous (e.g., for device I/O)\nBuddy system allocator: hand out blocks of size \\(2^k\\)\n\nRequest of size \\(s\\): find the smallest \\(2^k \\ge s\\)\nToo big? Split into two “buddies” of size \\(2^{k-1}\\), repeat\nOn free: if the buddy is also free, coalesce back into a larger block"
-  },
-  {
-    "objectID": "day21.html#buddy-system-allocator-tradeoffs",
-    "href": "day21.html#buddy-system-allocator-tradeoffs",
-    "title": "CSC 4553",
-    "section": "Buddy system allocator: tradeoffs",
-    "text": "Buddy system allocator: tradeoffs\n\nAdvantages?\n\nSimple and efficient for allocating memory of varying sizes\nCan quickly coalesce free blocks\n\nDisadvantages?\n\nFragmentation\n\nInternal fragmentation: if a request is for 5KB, we need to allocate an 8KB block, wasting 3KB\nExternal fragmentation: over time, as blocks are allocated and freed, we can end up with many small free blocks that cannot be coalesced into larger blocks, making it difficult to satisfy larger allocation requests\n\nNot ideal for all workloads, particularly those with many small allocations"
-  },
-  {
-    "objectID": "day21.html#slab-allocator",
-    "href": "day21.html#slab-allocator",
-    "title": "CSC 4553",
-    "section": "Slab allocator",
-    "text": "Slab allocator\n\n\n\nLinux also uses a slab allocator for small objects\nSlab allocator maintains caches of pre-allocated memory chunks for frequently used, fixed-size objects (e.g., open-file structs, inodes, process control blocks)\nModern Linux’s implementation is SLUB\nAllocation is a quick grab from the right cache: less fragmentation, faster small allocations"
-  },
-  {
-    "objectID": "day21.html#section-1",
-    "href": "day21.html#section-1",
-    "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
-  },
-  {
-    "objectID": "day21.html#questions-to-consider-2",
-    "href": "day21.html#questions-to-consider-2",
-    "title": "CSC 4553",
-    "section": "Questions to consider",
-    "text": "Questions to consider\n\nWhy do we need file systems? What problem do they solve?\nWhat is a file, and what information does the OS need to track beyond just the raw data?\nHow should the OS present a file to a program, and why is a flat byte array the dominant abstraction?\nWhat types of files does Linux support, and how does this differ from file extensions?"
-  },
-  {
-    "objectID": "day21.html#file-systems",
-    "href": "day21.html#file-systems",
-    "title": "CSC 4553",
-    "section": "File systems",
-    "text": "File systems\n\nWe’ll talk about actual disks later. But we’ll start with files and file systems\nWhat do you think file systems do?\n\nOrganize and persist data as files and directories\nProvide a consistent, simple API no matter how the disk is organized (yet another virtual layer)\nProtection (e.g., permissions) and safe concurrent access\nReliability (e.g., journaling) and good performance\n\nObjects: files, directories, links, metadata\nServices: naming, hierarchies, locking, allocation, layout, security"
-  },
-  {
-    "objectID": "day21.html#files-1",
-    "href": "day21.html#files-1",
-    "title": "CSC 4553",
-    "section": "Files",
-    "text": "Files\n\nWhat is a file?\nFiles are the first-class, logical units of data with which processes interact\n\nA file is more than the data that constitutes the file\nWhat is a file’s name?\n\nA reference to the file. A file can have multiple names.\n\nIts type? Permissions? Owner? Created or last accessed when?\n\nThese are all examples of metadata, which must persist along with the data\n\nWhere does the data live on the storage device? How do we update it?\n\nThe file system decides the block layout; the device may remap it underneath"
-  },
-  {
-    "objectID": "day21.html#file-naming",
-    "href": "day21.html#file-naming",
-    "title": "CSC 4553",
-    "section": "File naming",
-    "text": "File naming\n\nHow do you think names can be leveraged?\nRestrictions on how files are named are up to the OS\nAs is the enforcement of extensions (e.g. .c, .exe, .txt)\n\nNeither kernel (Windows / Linux) cares for read/write; desktops (Explorer, GNOME/KDE) use extensions to pick a handler\nThe real difference is how “executable” is decided\n\nUNIX: permission bit + contents (ELF magic, #!)\nWindows: the extension (.exe, .bat, .ps1) decides how it runs; no shebang"
-  },
-  {
-    "objectID": "day21.html#file-structures",
-    "href": "day21.html#file-structures",
-    "title": "CSC 4553",
-    "section": "File structures",
-    "text": "File structures\n\nHow should the OS present a file to a user / program?\nMost commodity OSes represent files as a logically contiguous array of bytes\n\nBoth a human-readable name and an OS-level identifier (inode)\nVery flexible from a user/process perspective\n\nSome files are more heavily structured\n\nMainframes (IBM z/OS): files are sequences of records\nObject stores (Amazon S3): whole blobs, no in-place rewrites\n\nWho decides how a file is structured: the OS or the program?"
-  },
-  {
-    "objectID": "day21.html#linux-file-types",
-    "href": "day21.html#linux-file-types",
-    "title": "CSC 4553",
-    "section": "Linux file types",
-    "text": "Linux file types\n\nWhat do you think are some example file types from the OS’s perspective? (it’s not .c, .txt, etc., but more about the underlying structure and semantics of the file)\nIn UNIX, there are a few OS-supported file types\n\nRegular files: plaintext, images, executables\nDirectories (more on this later)\nCharacter devices: /dev/tty, /dev/zero, /dev/random\nBlock devices: /dev/sda\nSymbolic links: the file’s data is a path to another file\nNamed pipes (FIFOs) and sockets: endpoints for inter-process communication\n\nls -l shows the type as the first character: -, d, c, b, l, p, s"
-  },
-  {
-    "objectID": "day21.html#file-access",
-    "href": "day21.html#file-access",
-    "title": "CSC 4553",
-    "section": "File access",
-    "text": "File access\n\nHow do we want to access files?\nEarly OSes only supported sequential access (with rewind)\n\nThis was sensible, because our IO devices (tape, punch cards) were also sequential\n\nWhen disks were introduced, this enabled random access\n\nEnables a whole new class of applications and execution models (e.g. databases, virtual memory)"
-  },
-  {
-    "objectID": "day21.html#file-operations",
-    "href": "day21.html#file-operations",
-    "title": "CSC 4553",
-    "section": "File operations",
-    "text": "File operations\n\nWhat operations do we want to support on files?\nCommon operations:\n\ncreate, open, close, read, write, append, truncate, position (seek), get attributes, set attributes\n\nNaming operations (rename, link, unlink) are really operations on directories: more on those soon"
-  },
-  {
-    "objectID": "day21.html#section-2",
-    "href": "day21.html#section-2",
-    "title": "CSC 4553",
-    "section": "",
-    "text": "What isn’t clear?\nComments? Thoughts?"
-  },
-  {
-    "objectID": "day21.html#questions-to-consider-3",
-    "href": "day21.html#questions-to-consider-3",
+    "objectID": "day22.html#questions-to-consider",
+    "href": "day22.html#questions-to-consider",
     "title": "CSC 4553",
     "section": "Questions to consider",
     "text": "Questions to consider\n\nWhy do hierarchical directories solve problems that flat directories cannot?\nWhat is the difference between a hard link and a soft link?\nWhat happens when you delete a file that has multiple hard links? A soft link?"
   },
   {
-    "objectID": "day21.html#directories-1",
-    "href": "day21.html#directories-1",
+    "objectID": "day22.html#directories-1",
+    "href": "day22.html#directories-1",
     "title": "CSC 4553",
     "section": "Directories",
     "text": "Directories\n\nWhy don’t we use a single (flat) directory for all users?\n\nNaming problem: each file name must be unique\nGrouping problem: how to remember what files are mine / relate to my current coding project?\n\nWhat if we just had a single directory for each user but stayed flat otherwise?\n\nYou still have a naming problem. How many Makefiles do you have?"
   },
   {
-    "objectID": "day21.html#what-is-a-directory",
-    "href": "day21.html#what-is-a-directory",
+    "objectID": "day22.html#what-is-a-directory",
+    "href": "day22.html#what-is-a-directory",
     "title": "CSC 4553",
     "section": "What is a directory?",
-    "text": "What is a directory?\n\nDirectories are a special kind of file, whose data are &lt;name, inode&gt; pairs, called directory entries (a.k.a. dirents)\nTypically a directory only stores direct children inodes\nBy default, a directory contains . (self reference) and .. (parent)"
+    "text": "What is a directory?\n\nDirectories are a special kind of file, whose data are &lt;name, inode&gt; pairs, called directory entries (a.k.a. dirents)\nOnly direct children: a path like /a/b/c is resolved one component at a time\nBy default, a directory contains . (self reference) and .. (parent)"
   },
   {
-    "objectID": "day21.html#directory-structure",
-    "href": "day21.html#directory-structure",
+    "objectID": "day22.html#directory-structure",
+    "href": "day22.html#directory-structure",
     "title": "CSC 4553",
     "section": "Directory structure",
-    "text": "Directory structure\n\n\n\nHow do we want to structure directories?\nCommon approach: a hierarchy (tree)\n\nUNIX: a tree starting with root (“/”)\n\nFixes the single-directory problems\n\nSame name in different places; logical organization\n\nPaths: absolute or relative. Examples?\n\n/home/prs/file.txt vs. ./file.txt"
+    "text": "Directory structure\n\n\n\nHow do we want to structure directories?\nCommon approach: a hierarchy (tree)\n\nUNIX: a tree starting with root (“/”)\n\nPaths: absolute or relative. Examples?\n\n/home/prs/file.txt vs. ./file.txt"
   },
   {
-    "objectID": "day21.html#directory-operations",
-    "href": "day21.html#directory-operations",
+    "objectID": "day22.html#directory-operations",
+    "href": "day22.html#directory-operations",
     "title": "CSC 4553",
     "section": "Directory operations",
-    "text": "Directory operations\n\nWhat operations do we want to support on directories?\nCommon operations:\n\nmkdir, rmdir, opendir, closedir, readdir, rename, link, unlink\n\nrename: remove the old directory entry and add a new one (atomically); the file’s data doesn’t move\n\nParent directories’ modification times change\n\nlink: add a new directory entry pointing to the same inode\n\nThe file’s data is untouched, but the inode’s link count goes up (and its change time is updated)\n\nunlink: remove a directory entry and decrement the link count"
+    "text": "Directory operations\n\nWhat operations do we want to support on directories?\nCommon operations:\n\nmkdir, rmdir, opendir, closedir, readdir, rename, link, unlink\n\nrename: remove the old directory entry and add a new one (atomically); the file’s data doesn’t move\n\nParent directories’ modification times change\n\nlink: add a new directory entry pointing to the same inode\n\nThe file’s data is untouched, but the inode’s link count goes up (and its change time is updated)\n\nunlink: remove a directory entry and decrement the link count\n\n\nDemo: watch the link count and ctime change (Linux/GNU stat)\n\nmkdir demo && cd demo && echo hi &gt; a\nstat a: point out Inode, Links: 1, and the Change time\nln a b, then stat a again: same inode, Links: 2, Change time bumped, Modify time unchanged\nls -li: first column is the inode number, third is the link count. a and b match\nstat -c '%i %h %n' a b: compact view (inode, hard links, name)\nmv b c && ls -li: inode unchanged, only the name moved. stat . shows the directory’s Modify time changed\nrm c and stat a: Links back to 1\nDirectories: stat -c '%h' . on a fresh dir is 2 (its entry in the parent plus its own .). mkdir sub bumps it to 3 (the .. in sub)\nShow the syscalls: strace -e trace=link,linkat,unlink,unlinkat,rename,renameat2 ln a b (and the same with rm b, mv)\nmacOS: stat -f '%i %l %N' a b; ls -li works the same"
   },
   {
-    "objectID": "day21.html#hard-and-soft-links",
-    "href": "day21.html#hard-and-soft-links",
+    "objectID": "day22.html#hard-and-soft-links",
+    "href": "day22.html#hard-and-soft-links",
     "title": "CSC 4553",
     "section": "Hard and soft links",
-    "text": "Hard and soft links\n\nWho can tell me the difference?\n\nHard: another directory entry for the same inode\nSoft: a separate file whose data is a path\n\nHow do you create them in Linux?\n\nln target name vs. ln -s target name\n\nWhat happens when you delete a hard linked file?\n\nLink count drops; data is freed only when it hits 0 (and no process has it open)\n\nWhat happens when you delete a soft linked file?\n\nDeleting the link leaves the target alone; deleting the target leaves a dangling link\n\nHard links can’t span file systems or point to directories (keeps the tree a DAG); symlinks can, so they can form cycles"
+    "text": "Hard and soft links\n\nWho can tell me the difference?\n\nHard: another directory entry for the same inode\nSoft: a separate file whose data is a path\n\nHow do you create them in Linux?\n\nln target name vs. ln -s target name\n\nHard links can’t span file systems or point to directories (no cycles); symlinks can, so they can loop"
   },
   {
-    "objectID": "day21.html#section-3",
-    "href": "day21.html#section-3",
+    "objectID": "day22.html#predict-the-links",
+    "href": "day22.html#predict-the-links",
+    "title": "CSC 4553",
+    "section": "Predict the links",
+    "text": "Predict the links\n\n\necho hello &gt; target\nln target hard\nln -s target soft\nls -li          # (1)\nrm target\ncat hard        # (2)\ncat soft        # (3)\necho bye &gt; target\ncat hard        # (4)\ncat soft        # (5)\n\n\n\n\nThink: At (1), which names share an inode, and what is each link count? Predict the output of (2) and (3).\nDiscuss: Compare with a neighbor, then predict (4) and (5). Why do hard and soft now disagree?\n\n\n\nTiming: ~2 min think, ~3 min pair, ~3 min share. Then run it live as the reveal (demo below).\nAnswers:\n\n\ntarget and hard share an inode, link count 2. soft has its own inode, link count 1, type l, size 6 (the string “target”)\n\n\nhello: rm only removed one name; link count drops to 1, data stays\n\n\ncat: soft: No such file or directory: the path target no longer resolves. Dangling link\n\n\nhello: hard still points at the original inode\n\n\nbye: soft stores a name, and that name now resolves to a brand-new inode\n\nPunchline: a hard link names an inode; a soft link names a path. If no one gets (4)/(5), ask “what exactly does each one store?”\nData is freed when the link count hits 0 and no process has it open (open-but-unlinked bullet below)\n\nDemo: hard vs. soft links\n\necho hello &gt; target && ln target hard && ln -s target soft\nls -li: hard shares target’s inode (as in the last demo). soft has its own inode, type l, and size 6 (the length of the string “target”)\nstat soft vs. stat -L soft: plain stat uses lstat() and describes the link itself; -L uses stat() and follows it to the target\nreadlink soft: prints the stored path. cat soft: the kernel follows it\nC side: stat(path) follows symlinks, lstat(path) doesn’t, fstat(fd) works on an open file, so it always describes whatever open() resolved (the target). st_ino, st_nlink, and S_ISLNK(st_mode) are the fields to print\nrm target, then cat hard (still works, link count now 1) and cat soft (No such file or directory). ls -l shows the dangling link, often in red\necho bye &gt; target, then cat hard (hello) and cat soft (bye). ls -li shows target has a new inode number\nOpen-but-unlinked: exec 3&lt; hard; rm hard; ls -l /proc/$$/fd/3 shows “(deleted)” yet cat &lt;&3 still reads it. Data freed when fd 3 closes (exec 3&lt;&-)\nCross-filesystem: ln /tmp/x ~/x fails with “Invalid cross-device link” (EXDEV) when /tmp is a separate mount; ln -s works. Compare stat -c %d (device) on each side\nDirectories: ln somedir d2 fails (“hard link not allowed for directory”); ln -s somedir d2 works\nCycle: mkdir loop && ln -s .. loop/up, then ls loop/up/loop/up/loop. find -L . reports a filesystem loop; plain find doesn’t follow it\nstrace -e trace=stat,lstat,newfstatat,statx stat soft shows which call the tool actually makes"
+  },
+  {
+    "objectID": "day22.html#section",
+    "href": "day22.html#section",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day22.html#questions-to-consider-1",
+    "href": "day22.html#questions-to-consider-1",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nHow is a disk partitioned and bootstrapped so the OS can find its file systems?\nWhat on-disk structures are needed to organize files, and what role does each play?"
+  },
+  {
+    "objectID": "day22.html#disk-layout",
+    "href": "day22.html#disk-layout",
+    "title": "CSC 4553",
+    "section": "Disk layout",
+    "text": "Disk layout"
+  },
+  {
+    "objectID": "day22.html#disk-layout-contd",
+    "href": "day22.html#disk-layout-contd",
+    "title": "CSC 4553",
+    "section": "Disk layout (cont’d)",
+    "text": "Disk layout (cont’d)\n\nMaster Boot Record (MBR): sector 0 holds the partition table and boot code\n\nBIOS reads MBR, locates the active partition, loads its boot block, and jumps to the OS loader\nModern machines: GPT partition table + UEFI firmware, same idea\n\nFile system structures vary by implementation; two major on-disk components:\n\nMetadata: information about files (inodes, bitmaps, superblock)\nData: the actual file contents"
+  },
+  {
+    "objectID": "day22.html#start-with-a-blank-disk",
+    "href": "day22.html#start-with-a-blank-disk",
+    "title": "CSC 4553",
+    "section": "Start with a blank disk",
+    "text": "Start with a blank disk\n\nDivided into blocks, let’s say 64 blocks that are 4KB each\nMost of the disk is reserved for data blocks (storing file contents)"
+  },
+  {
+    "objectID": "day22.html#metadata-blocks",
+    "href": "day22.html#metadata-blocks",
+    "title": "CSC 4553",
+    "section": "Metadata blocks",
+    "text": "Metadata blocks\n\nMetadata about files is stored in inodes, grouped into an inode table\nWe also need to track which blocks are in use: bitmaps (0 = free, 1 = in-use)\n\nOne bitmap block for inodes, one for data blocks"
+  },
+  {
+    "objectID": "day22.html#how-do-we-bootstrap-the-file-system",
+    "href": "day22.html#how-do-we-bootstrap-the-file-system",
+    "title": "CSC 4553",
+    "section": "How do we bootstrap the file system?",
+    "text": "How do we bootstrap the file system?\n\nWhen the system starts, how do we figure out how to do things with this file system?\n\nSuperblock"
+  },
+  {
+    "objectID": "day22.html#superblock",
+    "href": "day22.html#superblock",
+    "title": "CSC 4553",
+    "section": "Superblock",
+    "text": "Superblock\n\nThe superblock describes the file system as a whole:\n\nType (a magic number identifying e.g. ext4)\nBlock and inode counts (total and free)\nLocations of the bitmaps, inode table, and data blocks\nMount state (clean or dirty)\n\nWithout it the file system can’t be mounted, so it’s replicated in several places on disk"
+  },
+  {
+    "objectID": "day22.html#section-1",
+    "href": "day22.html#section-1",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day22.html#questions-to-consider-2",
+    "href": "day22.html#questions-to-consider-2",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhat information does an inode store, and why doesn’t it include the file name?\nWhy can’t we just use direct pointers for all files, and how do we solve the problem?"
+  },
+  {
+    "objectID": "day22.html#inodes-1",
+    "href": "day22.html#inodes-1",
+    "title": "CSC 4553",
+    "section": "Inodes",
+    "text": "Inodes\n\nEach inode tracks metadata about a file, including:\n\nPointers to data blocks associated with the file\nLink count (number of directory entries that point to this inode)\nPermissions, owner and group IDs, file size\nTimestamps (change, modification, access)\n(most things available from stat())\n\nDoes NOT contain the file name\n\nNames live in directory entries, so one inode can have many names (hard links)"
+  },
+  {
+    "objectID": "day22.html#inodes-contd",
+    "href": "day22.html#inodes-contd",
+    "title": "CSC 4553",
+    "section": "Inodes (cont’d)",
+    "text": "Inodes (cont’d)\n\nUsers see names; the OS works with inode numbers\nLet’s imagine inodes are 256 bytes, so we can store 80 in the example 20KB table"
+  },
+  {
+    "objectID": "day22.html#inodes-contd-1",
+    "href": "day22.html#inodes-contd-1",
+    "title": "CSC 4553",
+    "section": "Inodes (cont’d)",
+    "text": "Inodes (cont’d)\n\n\n\nWe use the inode to reference the file’s data blocks, which are separate from the inode itself\nHow should we track the data blocks for a file?\n\nOne option: direct pointers\n\nAny problems with this approach?"
+  },
+  {
+    "objectID": "day22.html#multi-level-pointers",
+    "href": "day22.html#multi-level-pointers",
+    "title": "CSC 4553",
+    "section": "Multi-level pointers",
+    "text": "Multi-level pointers\n\n\n\nDirect pointers alone limit file size. The ext2 fix: 15 pointers in the inode\n\n12 direct: point to data blocks\n1 single indirect: a block of pointers to data blocks\n1 double indirect: a block of pointers to single indirect blocks\n1 triple indirect: one more level\n\n4KB blocks, 32-bit (4-byte) block addresses\n\n\n\n\n\nThink: What is the largest file reachable using only direct pointers? Up through single, double, and triple indirect?\nDiscuss: The inode is already in memory. How many disk reads to read the byte at offset 10,000? At 5,000,000? At 5GB?\n\n\n\nTiming: ~2 min think, ~4 min pair, ~3 min share. Next slide is the answer key for the sizes.\nKey fact they need: a 4KB block holds 4096 / 4 = 1024 pointers.\nMax sizes:\n\nDirect: 12 * 4KB = 48KB\n\nsingle: (12 + 1024) * 4KB = 4144KB (~4MB)\n\n\ndouble: (12 + 1024 + 1024^2) * 4KB (~4GB)\n\n\ntriple: (12 + 1024 + 1024^2 + 1024^3) * 4KB (~4TB)\n\n\nDisk reads (count index blocks + the data block; inode already cached). Block ranges: direct 0-11, single 12-1035, double 1036-1,049,611, triple beyond.\n\nOffset 10,000: block 2 (10000 / 4096), direct, 1 read\nOffset 5,000,000: block 1220, in the double range, 3 reads (double block, single block, data)\nOffset 5GB (5 * 2^30): block 1,310,720, past 1,049,611, triple range, 4 reads\n\nFollow-up: “Is 4 reads per block a problem?” leads into the next slide (most files are small; caching the index blocks helps for sequential reads)."
+  },
+  {
+    "objectID": "day22.html#multi-level-pointers-answers",
+    "href": "day22.html#multi-level-pointers-answers",
+    "title": "CSC 4553",
+    "section": "Multi-level pointers: answers",
+    "text": "Multi-level pointers: answers\n\nDirect only: \\(12 * 4KB = 48KB\\)\nSingle indirect: \\((12 + 1024) * 4KB = 4144KB\\)\nDouble indirect: \\((12 + 1024 + 1024^2) * 4KB = \\sim4GB\\)\nTriple indirect: \\((12 + 1024 + 1024^2 + 1024^3) * 4KB = \\sim4TB\\)\nReads: offset 10,000 needs 1, offset 5,000,000 needs 3, offset 5GB needs 4"
+  },
+  {
+    "objectID": "day22.html#inodes-contd-2",
+    "href": "day22.html#inodes-contd-2",
+    "title": "CSC 4553",
+    "section": "Inodes (cont’d)",
+    "text": "Inodes (cont’d)\n\nMulti-level pointers support a wide range of file sizes with a fixed-size inode\n\nUsed by ext2, ext3, and others\n\nDownside: big files need up to 4 reads per data block (as you just computed). So why is this used?\n\nThe vast majority of files are small, so optimizing for that case is fine"
+  },
+  {
+    "objectID": "day22.html#section-2",
+    "href": "day22.html#section-2",
+    "title": "CSC 4553",
+    "section": "",
+    "text": "What isn’t clear?\nComments? Thoughts?"
+  },
+  {
+    "objectID": "day22.html#questions-to-consider-3",
+    "href": "day22.html#questions-to-consider-3",
+    "title": "CSC 4553",
+    "section": "Questions to consider",
+    "text": "Questions to consider\n\nWhat data structures can be used to implement directories, and what are the trade-offs of each?\nWhat are the trade-offs between contiguous, linked, and indexed data block allocation?\nWhat are the options for tracking free blocks, and when does each make sense?"
+  },
+  {
+    "objectID": "day22.html#directory-implementation",
+    "href": "day22.html#directory-implementation",
+    "title": "CSC 4553",
+    "section": "Directory implementation",
+    "text": "Directory implementation\n\nA directory is a file of &lt;name, inode&gt; entries; we need to search, add, delete, and rename\nSimplest structure: a linear list\n\nEasy to implement\nDownsides?\n\nLookups are O(n), and we hit directories on every path lookup. Any way to speed it up?\n\nCaching: many OSes cache recent directory info\nSorted lists / balanced trees: faster search, but keeping them sorted and balanced adds complexity"
+  },
+  {
+    "objectID": "day22.html#directory-implementation-contd",
+    "href": "day22.html#directory-implementation-contd",
+    "title": "CSC 4553",
+    "section": "Directory implementation (cont’d)",
+    "text": "Directory implementation (cont’d)\n\nHash table: hash the file name to find its entry\n\nPro: no more linear searching\nAny complications?\n\nCollisions are inevitable, so we need chaining or probing\nFixed size: past the limit, the table has to grow\n\nWhy not just use a giant hash table by default?\n\nSmall tables fit in hardware caches, and most directories are small"
+  },
+  {
+    "objectID": "day22.html#data-block-allocation",
+    "href": "day22.html#data-block-allocation",
+    "title": "CSC 4553",
+    "section": "Data block allocation",
+    "text": "Data block allocation\n\nWhere do a file’s blocks go? No single best answer\n\n\n\nContiguous\n\nPro: fast sequential, simple\nCon: external fragmentation, hard to grow\nExtents: runs of blocks\n\n\nLinked\n\nPro: no external fragmentation, easy to grow\nCon: slow random access; one bad pointer loses the rest\n\n\nIndexed\n\nIndex block of pointers to data blocks\nThe inode scheme from earlier"
+  },
+  {
+    "objectID": "day22.html#free-block-tracking",
+    "href": "day22.html#free-block-tracking",
+    "title": "CSC 4553",
+    "section": "Free block tracking",
+    "text": "Free block tracking\n\nBitmaps: one bit per block (0 = free, 1 = in-use)\n\nSpace-efficient (32MB for a 1TB drive at 4KB blocks), fast bitwise scanning\nUsed by ext2/3/4, NTFS\nCon: finding contiguous free blocks requires scanning\n\nModern large-scale file systems use extent trees (XFS, Btrfs) or B-trees (ZFS) that track runs of free blocks rather than individual ones"
+  },
+  {
+    "objectID": "day22.html#section-3",
+    "href": "day22.html#section-3",
     "title": "CSC 4553",
     "section": "",
     "text": "What isn’t clear?\nComments? Thoughts?"
